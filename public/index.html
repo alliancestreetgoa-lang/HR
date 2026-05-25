@@ -159,6 +159,11 @@
   .att-ML{background:#e0f2fe;color:#075985;border-color:#7dd3fc}
   .att-W{background:#f1f5f9;color:#94a3b8;border-color:#e2e8f0}
   .att-HOL{background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff}
+  /* Compensatory Off statuses */
+  .att-CO{background:#ffedd5;color:#9a3412;border-color:#fdba74}   /* worked on weekend → earned CO */
+  .att-CL{background:#fef9c3;color:#713f12;border-color:#fde047}   /* used comp off leave */
+  /* Weekend cell highlight (unset Sat/Sun) */
+  .att-weekend{background:#f8fafc;color:#cbd5e1;border-color:#e2e8f0;font-style:italic}
   /* ── Modal ── */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(3px);z-index:1000;align-items:center;justify-content:center;padding:16px}
   .modal-overlay.open{display:flex}
@@ -485,8 +490,13 @@
       <div class="form-group"><label>Month</label><input type="month" id="bulk-month"></div>
       <div class="form-group"><label>Default Status</label>
         <select id="bulk-default">
-          <option value="P">Present (P)</option><option value="A">Absent (A)</option>
+          <option value="P">Present (P)</option>
+          <option value="A">Absent (A)</option>
           <option value="H">Half Day (H)</option>
+          <option value="PL">Paid Leave (PL)</option>
+          <option value="ML">Medical Leave (ML)</option>
+          <option value="CO">Comp Off Worked (CO)</option>
+          <option value="CL">Comp Off Leave (CL)</option>
         </select>
       </div>
     </div>
@@ -895,6 +905,7 @@ const api = {
 //  UTILS
 // ═══════════════════════════════════════════════════════════
 function todayStr() { return new Date().toISOString().substring(0,10); }
+function isWeekendDay(dateStr) { const d=new Date(dateStr+'T00:00:00').getDay(); return d===0||d===6; }
 function fmt(n) { return Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function cur() { const co = companies.find(c=>c.id===activeCompanyId); return co?.currency||'₹'; }
 
@@ -1257,18 +1268,34 @@ async function renderDailyAtt() {
   }
   const tb = document.getElementById('daily-tbody');
   if (!employees.length) { tb.innerHTML='<tr><td colspan="4" class="empty">No employees</td></tr>'; return; }
-  const statuses = ['','P','A','H','PL','ML'];
-  const statusColors = {'P':'#d1fae5','A':'#fee2e2','H':'#fef3c7','PL':'#ede9fe','ML':'#e0f2fe','':'#f1f5f9'};
+  const isWeekend = isWeekendDay(currentAttDate);
+  const statuses = ['','P','A','H','PL','ML','CO','CL'];
+  const statusColors = {
+    'P':'#d1fae5','A':'#fee2e2','H':'#fef3c7','PL':'#ede9fe','ML':'#e0f2fe',
+    'CO':'#ffedd5','CL':'#fef9c3','':'#f1f5f9'
+  };
+  const statusLabels = {P:'P',A:'A',H:'H',PL:'PL',ML:'ML',CO:'CO★',CL:'CL','':'—'};
+  // Weekend badge in date header
+  const weekendNote = isWeekend
+    ? `<span style="margin-left:10px;background:#ffedd5;color:#9a3412;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700">📅 Weekend — CO if worked</span>`
+    : '';
+  document.querySelector('#pane-3 .card-title') && (() => {})();
   tb.innerHTML = employees.map((e,i) => {
     const s = attendance[e.code]?.[currentAttDate] || '';
     const ot = overtime[e.code]?.[currentAttDate] || 0;
-    const btns = statuses.map(st => `
-      <button class="att-status-btn${st===s?' att-'+st:''}"
-        style="background:${st===s?statusColors[st]:'#f8fafc'};border-color:${st===s?'#94a3b8':'transparent'}"
-        onclick="setAtt('${e.code}','${currentAttDate}','${st}')">${st||'—'}</button>`).join('');
-    return `<tr>
+    const btns = statuses.map(st => {
+      const isActive = st===s;
+      const label = statusLabels[st]||st||'—';
+      return `<button class="att-status-btn${isActive?' att-'+(st||'blank'):''}"
+        style="background:${isActive?statusColors[st]:'#f8fafc'};border-color:${isActive?'#94a3b8':'transparent'};${st==='CO'&&!isActive?'border-color:#fdba74;color:#9a3412;':''}"
+        title="${st==='CO'?'Worked on weekend — Comp Off earned':st==='CL'?'Comp Off Leave used':''}"
+        onclick="setAtt('${e.code}','${currentAttDate}','${st}')">${label}</button>`;
+    }).join('');
+    const rowBg = isWeekend && !s ? 'background:#fafafa;' : '';
+    return `<tr style="${rowBg}">
       <td>${i+1}</td>
-      <td><strong>${e.name}</strong><br><span style="font-size:.75rem;color:var(--text3)">${e.code}</span></td>
+      <td><strong>${e.name}</strong><br><span style="font-size:.75rem;color:var(--text3)">${e.code}</span>
+        ${isWeekend?'<span style="font-size:.68rem;color:#9a3412;font-weight:600"> · Weekend</span>':''}</td>
       <td><div class="att-status-row">${btns}</div></td>
       <td><input type="number" min="0" max="24" step="0.5" value="${ot||''}" placeholder="0"
         style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:.82rem"
@@ -1333,27 +1360,34 @@ async function renderMonthly() {
     const isHol = holSet.has(ds);
     html += `<th style="min-width:30px;text-align:center;padding:4px;${wd===0||isHol?'color:var(--danger)':''}">${d}<br><span style="font-weight:400">${['Su','Mo','Tu','We','Th','Fr','Sa'][wd]}</span></th>`;
   }
-  html += '<th>P</th><th>A</th><th>H</th><th>PL</th><th>ML</th><th>Total OT hrs</th></tr></thead><tbody>';
+  const mvBgMap = {P:'#d1fae5',A:'#fee2e2',H:'#fef3c7',PL:'#ede9fe',ML:'#e0f2fe',CO:'#ffedd5',CL:'#fef9c3'};
+  html += '<th>P</th><th>A</th><th>H</th><th>PL</th><th>ML</th><th>CO</th><th>CL</th><th>OT hrs</th></tr></thead><tbody>';
   employees.forEach(e => {
-    let P=0,A=0,H=0,PL=0,ML=0,totalOT=0;
+    let P=0,A=0,H=0,PL=0,ML=0,CO=0,CL=0,totalOT=0;
     html += `<tr><td style="position:sticky;left:0;background:#fff;z-index:1;padding:6px 8px;border-right:1px solid var(--border)"><strong>${e.name}</strong><br><span style="color:var(--text3)">${e.code}</span></td>`;
     for (let d=1;d<=days;d++) {
       const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const wd = new Date(ds+'T00:00:00').getDay();
       const isHol = holSet.has(ds);
+      const isWknd = (wd===0||wd===6);
       const s = attendance[e.code]?.[ds];
       const oth = overtime[e.code]?.[ds]||0;
       if (oth) totalOT += oth;
-      if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++; else if (s==='PL') PL++; else if (s==='ML') ML++;
+      if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
+      else if (s==='PL') PL++; else if (s==='ML') ML++;
+      else if (s==='CO') CO++; else if (s==='CL') CL++;
       let bg='';
-      if (s) bg = {P:'#d1fae5',A:'#fee2e2',H:'#fef3c7',PL:'#ede9fe',ML:'#e0f2fe'}[s]||'';
-      else if (isHol) bg='#fdf4ff'; else if (wd===0) bg='#f1f5f9';
-      html += `<td style="text-align:center;padding:3px;background:${bg};border:1px solid #f0f0f0">${s||(isHol?'H':wd===0?'W':'')}</td>`;
+      if (s) bg = mvBgMap[s]||'';
+      else if (isHol) bg='#fdf4ff'; else if (isWknd) bg='#f1f5f9';
+      const label = s||(isHol?'H':isWknd?(wd===6?'Sa':'Su'):'');
+      html += `<td style="text-align:center;padding:3px;background:${bg};border:1px solid #f0f0f0;${isWknd&&!s?'color:#94a3b8;font-size:.65rem':''}${s==='CO'?';font-weight:700;color:#9a3412':''}${s==='CL'?';font-weight:700;color:#713f12':''}">${label}</td>`;
     }
     html += `<td style="text-align:center;font-weight:700;color:var(--success)">${P}</td>
       <td style="text-align:center;font-weight:700;color:var(--danger)">${A}</td>
       <td style="text-align:center">${H}</td><td style="text-align:center">${PL}</td>
       <td style="text-align:center">${ML}</td>
+      <td style="text-align:center;font-weight:700;color:#9a3412">${CO||''}</td>
+      <td style="text-align:center;color:#713f12">${CL||''}</td>
       <td style="text-align:center">${totalOT>0?totalOT:''}</td></tr>`;
   });
   html += '</tbody></table>';
@@ -1409,8 +1443,8 @@ async function renderBulkTable() {
     html += `<th style="min-width:26px;text-align:center;padding:3px;${wd===0||isH?'color:var(--danger)':''}">${d}</th>`;
   }
   html += '</tr></thead><tbody>';
-  const statuses = ['P','A','H','PL','ML',''];
-  const statColors = {P:'#bbf7d0',A:'#fecaca',H:'#fef08a',PL:'#ddd6fe',ML:'#bae6fd','':'#f1f5f9'};
+  const statuses = ['P','A','H','PL','ML','CO','CL',''];
+  const statColors = {P:'#bbf7d0',A:'#fecaca',H:'#fef08a',PL:'#ddd6fe',ML:'#bae6fd',CO:'#fed7aa',CL:'#fef08a','':'#f1f5f9'};
   employees.forEach(e=>{
     html += `<tr><td style="position:sticky;left:0;background:#fff;z-index:1;padding:5px 8px;border-right:1px solid var(--border)">${e.name}</td>`;
     for (let d=1;d<=days;d++){
@@ -1418,8 +1452,9 @@ async function renderBulkTable() {
       const wd = new Date(ds+'T00:00:00').getDay();
       const isH = holSet.has(ds);
       const s = attendance[e.code]?.[ds]||'';
-      if (wd===0){html+=`<td style="background:#f1f5f9;text-align:center;font-size:.65rem;color:#94a3b8">W</td>`;continue;}
-      if (isH){html+=`<td style="background:#fdf4ff;text-align:center;font-size:.65rem;color:#7e22ce">H</td>`;continue;}
+      const isWknd = (wd===0||wd===6);
+      if (isWknd && !s){html+=`<td style="background:#f8fafc;text-align:center;font-size:.65rem;color:#94a3b8;cursor:pointer;border:1px solid #eee" title="${wd===6?'Saturday':'Sunday'} — click to mark CO" onclick="cycleBulkCell('${e.code}','${ds}',this)">W</td>`;continue;}
+      if (isH && !s){html+=`<td style="background:#fdf4ff;text-align:center;font-size:.65rem;color:#7e22ce">H</td>`;continue;}
       html += `<td style="background:${statColors[s]||'#fff'};text-align:center;cursor:pointer;border:1px solid #eee"
         onclick="cycleBulkCell('${e.code}','${ds}',this)">${s||'·'}</td>`;
     }
@@ -1430,8 +1465,8 @@ async function renderBulkTable() {
 }
 
 async function cycleBulkCell(code, date, el) {
-  const cycle = ['P','A','H','PL','ML',''];
-  const statColors = {P:'#bbf7d0',A:'#fecaca',H:'#fef08a',PL:'#ddd6fe',ML:'#bae6fd','':'#fff'};
+  const cycle = ['P','A','H','PL','ML','CO','CL',''];
+  const statColors = {P:'#bbf7d0',A:'#fecaca',H:'#fef08a',PL:'#ddd6fe',ML:'#bae6fd',CO:'#fed7aa',CL:'#fef08a','':'#fff'};
   const cur = el.textContent.trim()==='·'?'':el.textContent.trim();
   const ni = (cycle.indexOf(cur)+1)%cycle.length;
   const ns = cycle[ni];
@@ -1585,7 +1620,7 @@ function calcSalary(emp, month) {
   const daysTotal = daysInMonth(month);
   const holSet = new Set(holidays.filter(h=>h.date.startsWith(month)).map(h=>h.date));
   const co = companies.find(c=>c.id===activeCompanyId)||{};
-  let P=0,A=0,H=0,PL=0,ML=0,W=0,HOL=0,bj=0,totalOT=0;
+  let P=0,A=0,H=0,PL=0,ML=0,CO=0,CL=0,W=0,HOL=0,bj=0,totalOT=0;
   for (let d=1;d<=daysTotal;d++){
     const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const wd = new Date(ds+'T00:00:00').getDay();
@@ -1595,14 +1630,17 @@ function calcSalary(emp, month) {
     const s = attendance[emp.code]?.[ds];
     if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
     else if (s==='PL') PL++; else if (s==='ML') ML++;
+    else if (s==='CO') CO++; // worked on weekend → paid + earned comp off
+    else if (s==='CL') CL++; // used comp off leave → paid
     else if (holSet.has(ds)) HOL++;
-    else if (wd===0) W++;
+    else if (wd===0||wd===6) W++;
   }
   let workingDays = daysTotal;
   if (co.working_days==='auto') { workingDays = daysTotal-W-HOL-bj; if (workingDays<1) workingDays=1; }
   else if (co.working_days==='26') workingDays=26;
   else if (co.working_days==='30') workingDays=30;
-  const payableDays = P + H*0.5 + PL + ML;
+  // CO = full day pay (worked on weekend); CL = full day pay (using comp off leave)
+  const payableDays = P + H*0.5 + PL + ML + CO + CL;
   const perDay = parseFloat(emp.salary||0) / workingDays;
   const basicEarned = perDay * payableDays;
   const allowanceEarned = parseFloat(emp.allowance||0) * (payableDays/workingDays);
@@ -1610,7 +1648,7 @@ function calcSalary(emp, month) {
   const gross = basicEarned + allowanceEarned + otAmt;
   const statutory = parseFloat(emp.deduction||0);
   const net = gross - statutory;
-  return { workingDays, payableDays, P, A, H, PL, ML, totalOT, basicEarned, allowanceEarned, otAmt, gross, statutory, net };
+  return { workingDays, payableDays, P, A, H, PL, ML, CO, CL, totalOT, basicEarned, allowanceEarned, otAmt, gross, statutory, net };
 }
 
 async function previewSlip() {
@@ -1645,6 +1683,7 @@ async function previewSlip() {
         <div>Payable Days: <strong>${s.payableDays.toFixed(2)}</strong></div>
         <div>Present: <strong>${s.P}</strong> | Half: <strong>${s.H}</strong></div>
         <div>PL: <strong>${s.PL}</strong> | ML: <strong>${s.ML}</strong> | Absent: <strong>${s.A}</strong></div>
+        ${(s.CO||s.CL)?`<div style="color:#9a3412">CO Worked: <strong>${s.CO||0}</strong> | CL Used: <strong>${s.CL||0}</strong></div>`:''}
         ${s.totalOT?`<div>OT Hours: <strong>${s.totalOT}</strong></div>`:''}
       </div>
       <table class="slip-table">
@@ -1686,6 +1725,7 @@ async function downloadSlipPDF() {
         ['Working Days',''+s.workingDays,'Payable Days',''+s.payableDays.toFixed(2)],
         ['Present',''+s.P,'Absent',''+s.A],
         ['Paid Leave',''+s.PL,'Medical Leave',''+s.ML],
+        ['Comp Off Worked (CO)',''+( s.CO||0),'Comp Off Leave (CL)',''+( s.CL||0)],
       ]});
     const y1 = doc.lastAutoTable.finalY + 6;
     doc.autoTable({startY:y1,theme:'striped',styles:{fontSize:9},
@@ -2034,9 +2074,9 @@ async function downloadMonthlyPDF() {
   doc.setFontSize(13); doc.setFont('helvetica','bold');
   doc.text((co.name||'Company')+' — Attendance Report — '+month, 14, 14);
 
-  const head = ['Employee',...Array.from({length:days},(_,i)=>String(i+1)),'P','A','H','PL','ML'];
+  const head = ['Employee',...Array.from({length:days},(_,i)=>String(i+1)),'P','A','H','PL','ML','CO','CL'];
   const body = employees.map(emp=>{
-    let P=0,A=0,H=0,PL=0,ML=0;
+    let P=0,A=0,H=0,PL=0,ML=0,CO=0,CL=0;
     const days_arr = Array.from({length:days},(_,i)=>{
       const d = i+1;
       const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -2044,9 +2084,11 @@ async function downloadMonthlyPDF() {
       const s = attendance[emp.code]?.[ds];
       if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
       else if (s==='PL') PL++; else if (s==='ML') ML++;
-      if (s) return s; if (holSet.has(ds)) return 'H'; if (wd===0) return 'W'; return '';
+      else if (s==='CO') CO++; else if (s==='CL') CL++;
+      if (s) return s; if (holSet.has(ds)) return 'H';
+      if (wd===6) return 'Sa'; if (wd===0) return 'Su'; return '';
     });
-    return [emp.name,...days_arr,P,A,H,PL,ML];
+    return [emp.name,...days_arr,P,A,H,PL,ML,CO||'',CL||''];
   });
 
   doc.autoTable({startY:20,theme:'grid',styles:{fontSize:6,cellPadding:1.5},
