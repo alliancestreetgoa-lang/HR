@@ -622,7 +622,7 @@
           <option value="30">Fixed 30</option>
         </select>
       </div>
-      <div class="form-group"><label>OT Rate (per hour ₹)</label><input type="number" id="set-ot" min="0"></div>
+      <div class="form-group"><label id="lbl-set-ot">OT Rate (per hour)</label><input type="number" id="set-ot" min="0"></div>
     </div>
     <div style="margin-top:16px;display:flex;gap:10px">
       <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
@@ -697,9 +697,9 @@
         <div class="form-group"><label>Designation</label><input type="text" id="em-desig"></div>
         <div class="form-group"><label>Department</label><input type="text" id="em-dept"></div>
         <div class="form-group"><label>Join Date</label><input type="date" id="em-join"></div>
-        <div class="form-group"><label>Basic Salary (₹)</label><input type="number" id="em-salary" min="0"></div>
-        <div class="form-group"><label>Allowance (₹/mo)</label><input type="number" id="em-allow" min="0"></div>
-        <div class="form-group"><label>Fixed Deduction (₹/mo)</label><input type="number" id="em-deduct" min="0"></div>
+        <div class="form-group"><label id="lbl-em-salary">Basic Salary</label><input type="number" id="em-salary" min="0"></div>
+        <div class="form-group"><label id="lbl-em-allow">Allowance /mo</label><input type="number" id="em-allow" min="0"></div>
+        <div class="form-group"><label id="lbl-em-deduct">Fixed Deduction /mo</label><input type="number" id="em-deduct" min="0"></div>
         <div class="form-group"><label>Phone</label><input type="text" id="em-phone"></div>
         <div class="form-group"><label>Bank Details</label><input type="text" id="em-bank"></div>
         <div class="form-group"><label>PAN</label><input type="text" id="em-pan"></div>
@@ -805,10 +805,10 @@
         <div class="form-group full"><label>Employee *</label>
           <select id="adv-emp"><option value="">Select employee…</option></select>
         </div>
-        <div class="form-group"><label>Amount (₹) *</label><input type="number" id="adv-amount" min="1" oninput="calcMonthly()"></div>
+        <div class="form-group"><label id="lbl-adv-amount">Amount *</label><input type="number" id="adv-amount" min="1" oninput="calcMonthly()"></div>
         <div class="form-group"><label>Given Date</label><input type="date" id="adv-date"></div>
         <div class="form-group"><label>Repayment Months</label><input type="number" id="adv-months" value="1" min="1" oninput="calcMonthly()"></div>
-        <div class="form-group"><label>Monthly Deduction (₹)</label><input type="number" id="adv-monthly" min="0"></div>
+        <div class="form-group"><label id="lbl-adv-monthly">Monthly Deduction</label><input type="number" id="adv-monthly" min="0"></div>
         <div class="form-group full"><label>Reason</label><input type="text" id="adv-reason"></div>
       </div>
     </div>
@@ -828,10 +828,10 @@
     </div>
     <div class="modal-body">
       <div class="form-grid">
-        <div class="form-group full"><label>Total Amount Recovered (₹)</label>
+        <div class="form-group full"><label id="lbl-adv-r-recovered">Total Amount Recovered</label>
           <input type="number" id="adv-r-recovered" min="0">
         </div>
-        <div class="form-group full"><label>Monthly Deduction (₹)</label>
+        <div class="form-group full"><label id="lbl-adv-r-monthly">Monthly Deduction</label>
           <input type="number" id="adv-r-monthly" min="0">
         </div>
         <div class="form-group full"><label>Status</label>
@@ -897,6 +897,26 @@ const api = {
 function todayStr() { return new Date().toISOString().substring(0,10); }
 function fmt(n) { return Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function cur() { const co = companies.find(c=>c.id===activeCompanyId); return co?.currency||'₹'; }
+
+// Update every currency label in the UI to reflect the active company's currency
+function updateCurrencyLabels() {
+  const c = cur();
+  const map = {
+    'lbl-em-salary':   `Basic Salary (${c})`,
+    'lbl-em-allow':    `Allowance (${c}/mo)`,
+    'lbl-em-deduct':   `Fixed Deduction (${c}/mo)`,
+    'lbl-adv-amount':  `Amount (${c}) *`,
+    'lbl-adv-monthly': `Monthly Deduction (${c})`,
+    'lbl-adv-r-recovered': `Total Amount Recovered (${c})`,
+    'lbl-adv-r-monthly':   `Monthly Deduction (${c})`,
+    'lbl-set-ot':      `OT Rate (per hour ${c})`,
+  };
+  for (const [id, text] of Object.entries(map)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+}
+
 function dayName(d) { return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d+'T00:00:00').getDay()]; }
 function daysInMonth(ym) { const [y,m]=ym.split('-').map(Number); return new Date(y,m,0).getDate(); }
 function toast(msg, type='success') {
@@ -972,6 +992,8 @@ async function boot() {
     if (saved && companies.find(c=>c.id===saved)) {
       document.getElementById('co-select').value = saved;
       await switchCompany(saved);
+    } else {
+      updateCurrencyLabels(); // no saved company — still apply default labels
     }
   } catch(e) { toast('Cannot connect to server. Is it running?','error'); console.error(e); }
 }
@@ -1063,6 +1085,7 @@ async function switchCompany(id) {
     ]);
     renderCoGrid();
     renderEmployees();
+    updateCurrencyLabels();
     toast(`Switched to ${companies.find(c=>c.id===id)?.name}`,'info');
   } catch(e) { toast('Error loading company data','error'); }
 }
@@ -1098,7 +1121,7 @@ async function saveCompany() {
       await api.post('/api/companies', body);
     }
     companies = await api.get('/api/companies');
-    renderCoGrid(); populateCoSelect();
+    renderCoGrid(); populateCoSelect(); updateCurrencyLabels();
     closeModal('co-modal'); toast('Company saved!');
   } catch(e) { toast('Error: '+e.message,'error'); }
 }
