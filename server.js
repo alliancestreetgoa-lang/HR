@@ -13,8 +13,18 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── DB connection ───────────────────────────────────────────
+// Strip unsupported pg params (channel_binding) from the URL
+function cleanDbUrl(url) {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('channel_binding');
+    return u.toString();
+  } catch { return url; }
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: cleanDbUrl(process.env.DATABASE_URL),
   ssl: { rejectUnauthorized: false },
 });
 
