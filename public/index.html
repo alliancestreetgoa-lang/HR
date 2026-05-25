@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Management System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f0f2f5;--card:#fff;--border:#e2e8f0;--primary:#4f46e5;--primary-dark:#3730a3;
+    --accent:#06b6d4;--success:#10b981;--warn:#f59e0b;--danger:#ef4444;
+    --text:#1e293b;--text2:#64748b;--text3:#94a3b8;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  }
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  /* Header */
+  #header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;box-shadow:0 2px 8px rgba(0,0,0,.2);position:sticky;top:0;z-index:100}
+  #header h1{font-size:1.1rem;font-weight:700;white-space:nowrap;letter-spacing:-.3px}
+  #header h1 span{opacity:.7;font-weight:400}
+  #co-switcher{flex:1;max-width:280px;margin-left:auto}
+  #co-switcher select{width:100%;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:.85rem;cursor:pointer;outline:none}
+  #co-switcher select option{color:var(--text);background:#fff}
+  #btn-new-co{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;white-space:nowrap;transition:.2s}
+  #btn-new-co:hover{background:rgba(255,255,255,.3)}
+  /* Tabs */
+  #tabs{background:#fff;border-bottom:2px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:60px;z-index:99;gap:0}
+  #tabs::-webkit-scrollbar{display:none}
+  .tab-btn{padding:12px 18px;border:none;background:none;cursor:pointer;font-size:.82rem;font-weight:500;color:var(--text2);white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+  .tab-btn:hover{color:var(--primary);background:var(--bg)}
+  .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);background:#fff}
+  /* Content */
+  #content{padding:24px;max-width:1400px;margin:0 auto}
+  .pane{display:none}.pane.active{display:block}
+  /* Cards */
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;border:1px solid var(--border)}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .card-title{font-size:1rem;font-weight:600;color:var(--text)}
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:.84rem;font-weight:500;transition:.2s;text-decoration:none}
+  .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+  .btn-success{background:var(--success);color:#fff}.btn-success:hover{filter:brightness(.92)}
+  .btn-warn{background:var(--warn);color:#fff}.btn-warn:hover{filter:brightness(.92)}
+  .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{filter:brightness(.92)}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg)}
+  .btn-sm{padding:5px 10px;font-size:.78rem}
+  .btn-xs{padding:3px 8px;font-size:.74rem;border-radius:6px}
+  /* Form */
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  .form-group{display:flex;flex-direction:column;gap:4px}
+  .form-group label{font-size:.78rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+  .form-group input,.form-group select,.form-group textarea{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;color:var(--text);background:#fff;outline:none;transition:.2s;width:100%}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  .form-group.full{grid-column:1/-1}
+  /* Table */
+  .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:.84rem}
+  thead th{background:var(--bg);padding:10px 12px;font-weight:600;color:var(--text2);text-align:left;white-space:nowrap;border-bottom:2px solid var(--border)}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafbff}
+  /* Badge */
+  .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:600;text-transform:uppercase}
+  .badge-success{background:#d1fae5;color:#065f46}
+  .badge-warn{background:#fef3c7;color:#92400e}
+  .badge-danger{background:#fee2e2;color:#991b1b}
+  .badge-info{background:#e0f2fe;color:#075985}
+  .badge-gray{background:#f1f5f9;color:#475569}
+  .badge-purple{background:#ede9fe;color:#5b21b6}
+  /* Stat cards */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:20px}
+  .stat-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);box-shadow:var(--shadow)}
+  .stat-card .label{font-size:.74rem;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.5px}
+  .stat-card .value{font-size:1.8rem;font-weight:700;color:var(--text);margin-top:4px;line-height:1}
+  .stat-card .sub{font-size:.78rem;color:var(--text2);margin-top:4px}
+  /* Attendance grid */
+  .att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px;margin-top:8px}
+  .att-cell{border-radius:6px;padding:4px 2px;text-align:center;font-size:.7rem;font-weight:700;cursor:pointer;border:1.5px solid transparent;user-select:none;transition:.15s}
+  .att-P{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
+  .att-A{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+  .att-H{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+  .att-PL{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd}
+  .att-ML{background:#e0f2fe;color:#075985;border-color:#7dd3fc}
+  .att-W{background:#f1f5f9;color:#94a3b8;border-color:#e2e8f0}
+  .att-HOL{background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff}
+  /* Modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:16px}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:100%;max-width:580px;max-height:90vh;overflow-y:auto;animation:slideUp .2s ease}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+  .modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between}
+  .modal-header h3{font-size:1.05rem;font-weight:700}
+  .modal-body{padding:20px 24px}
+  .modal-footer{padding:0 24px 20px;display:flex;gap:10px;justify-content:flex-end}
+  .modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text3);line-height:1;padding:4px}
+  /* Toast */
+  #toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+  .toast-item{padding:12px 18px;border-radius:10px;color:#fff;font-size:.86rem;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideUp .2s ease;max-width:320px}
+  .toast-success{background:var(--success)}
+  .toast-error{background:var(--danger)}
+  .toast-info{background:var(--primary)}
+  /* Company cards */
+  .co-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .co-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:.2s;position:relative}
+  .co-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 4px 20px rgba(79,70,229,.12)}
+  .co-card.active-co{border-color:var(--primary);border-width:2px}
+  .co-card h3{font-size:.98rem;font-weight:700;margin-bottom:4px}
+  .co-card p{font-size:.8rem;color:var(--text2)}
+  .co-card-actions{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+  /* Section headers */
+  .section-title{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin:20px 0 10px;border-top:1px solid var(--border);padding-top:14px}
+  /* No data */
+  .empty{text-align:center;padding:48px 16px;color:var(--text3)}
+  .empty svg{width:48px;height:48px;opacity:.3;margin-bottom:12px}
+  .empty p{font-size:.9rem}
+  /* Attendance status selector */
+  .att-status-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .att-status-btn{padding:4px 10px;border-radius:6px;border:1.5px solid transparent;cursor:pointer;font-size:.75rem;font-weight:700;transition:.15s}
+  /* Payment status colors */
+  .pay-paid{background:#d1fae5;color:#065f46}
+  .pay-pending{background:#fef3c7;color:#92400e}
+  .pay-hold{background:#fee2e2;color:#991b1b}
+  /* Loading */
+  .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:500;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:600;color:var(--primary);gap:10px}
+  /* Salary slip */
+  #slip-preview{border:1px solid var(--border);border-radius:8px;padding:24px;background:#fff;font-size:.82rem;line-height:1.6}
+  .slip-logo{font-size:1.2rem;font-weight:800;color:var(--primary)}
+  .slip-table{width:100%;border-collapse:collapse;margin-top:12px}
+  .slip-table th,.slip-table td{padding:6px 10px;border:1px solid var(--border)}
+  .slip-table th{background:var(--bg);font-weight:600}
+  /* Responsive */
+  @media(max-width:640px){
+    #content{padding:12px}
+    .form-grid{grid-template-columns:1fr 1fr}
+    #header{padding:0 12px}
+    .tab-btn{padding:10px 12px;font-size:.78rem}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <h1>HR <span>Management</span></h1>
+  <div id="co-switcher">
+    <select id="co-select" onchange="switchCompany(this.value)">
+      <option value="">— Select Company —</option>
+    </select>
+  </div>
+  <button class="btn" id="btn-new-co" onclick="openCoModal()">+ New Company</button>
+</div>
+
+<!-- TABS -->
+<div id="tabs">
+  <button class="tab-btn active" onclick="showTab(0,this)">🏢 Companies</button>
+  <button class="tab-btn" onclick="showTab(1,this)">📊 Dashboard</button>
+  <button class="tab-btn" onclick="showTab(2,this)">👥 Employees</button>
+  <button class="tab-btn" onclick="showTab(3,this)">📅 Daily Attendance</button>
+  <button class="tab-btn" onclick="showTab(4,this)">📆 Monthly View</button>
+  <button class="tab-btn" onclick="showTab(5,this)">📋 Bulk Entry</button>
+  <button class="tab-btn" onclick="showTab(6,this)">🏖️ Leaves</button>
+  <button class="tab-btn" onclick="showTab(7,this)">🎉 Holidays</button>
+  <button class="tab-btn" onclick="showTab(8,this)">💵 Salary Slips</button>
+  <button class="tab-btn" onclick="showTab(9,this)">💳 Payments</button>
+  <button class="tab-btn" onclick="showTab(10,this)">💰 Advances</button>
+  <button class="tab-btn" onclick="showTab(11,this)">⚙️ Settings</button>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+<!-- ──────────── TAB 0: COMPANIES ──────────── -->
+<div class="pane active" id="pane-0">
+  <div class="card-header">
+    <div class="card-title">All Companies</div>
+    <button class="btn btn-primary" onclick="openCoModal()">+ Add Company</button>
+  </div>
+  <div id="co-grid" class="co-grid"></div>
+</div>
+
+<!-- ──────────── TAB 1: DASHBOARD ──────────── -->
+<div class="pane" id="pane-1">
+  <div id="dash-stats" class="stats-grid"></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Today's Attendance Summary</div>
+      <span id="dash-date" style="color:var(--text2);font-size:.85rem"></span>
+    </div>
+    <div id="dash-att-summary"></div>
+  </div>
+</div>
+
+<!-- ──────────── TAB 2: EMPLOYEES ──────────── -->
+<div class="pane" id="pane-2">
+  <div class="card-header">
+    <div class="card-title">Employees</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" id="emp-search" placeholder="Search…" oninput="renderEmployees()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:.84rem;width:180px">
+      <button class="btn btn-primary" onclick="openEmpModal()">+ Add Employee</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Code</th><th>Name</th><th>Designation</th><th>Department</th><th>Salary</th><th>Phone</th><th>Actions</th></tr></thead>
+      <tbody id="emp-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ──────────── TAB 3: DAILY ATTENDANCE ──────────── -->
+<div class="pane" id="pane-3">
+  <div class="card-header">
+    <div class="card-title">Daily Attendance</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="date" id="att-date" oninput="renderDailyAtt()">
+      <button class="btn btn-ghost btn-sm" onclick="markAllDaily('P')">✔ All Present</button>
+      <button class="btn btn-ghost btn-sm" onclick="markAllDaily('A')">✘ All Absent</button>
+    </div>
+  </div>
+  <div id="att-legend" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-size:.78rem;font-weight:600">
+    <span class="att-P att-cell" style="width:auto;padding:3px 10px">P = Present</span>
+    <span class="att-A att-cell" style="width:auto;padding:3px 10px">A = Absent</span>
+    <span class="att-H att-cell" style="width:auto;padding:3px 10px">H = Half Day</span>
+    <span class="att-PL att-cell" style="width:auto;padding:3px 10px">PL = Paid Leave</span>
+    <span class="att-ML att-cell" style="width:auto;padding:3px 10px">ML = Medical Leave</span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Employee</th><th>Status</th><th>OT Hours</th></tr></thead>
+      <tbody id="daily-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ──────────── TAB 4: MONTHLY VIEW ──────────── -->
+<div class="pane" id="pane-4">
+  <div class="card-header">
+    <div class="card-title">Monthly Attendance View</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="month" id="mv-month" oninput="renderMonthly()">
+      <button class="btn btn-primary btn-sm" onclick="downloadMonthlyPDF()">⬇ PDF</button>
+    </div>
+  </div>
+  <div id="monthly-wrap" style="overflow-x:auto"></div>
+</div>
+
+<!-- ──────────── TAB 5: BULK ENTRY ──────────── -->
+<div class="pane" id="pane-5">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header"><div class="card-title">Bulk Attendance Entry</div></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Month</label><input type="month" id="bulk-month"></div>
+      <div class="form-group"><label>Default Status</label>
+        <select id="bulk-default">
+          <option value="P">Present (P)</option><option value="A">Absent (A)</option>
+          <option value="H">Half Day (H)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="applyBulk()">Apply to All Employees</button>
+      <button class="btn btn-ghost" onclick="renderBulkTable()">Preview</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Per-Employee Override</div></div>
+    <p style="font-size:.82rem;color:var(--text2);margin-bottom:12px">Click cells in the table to override individual days after bulk apply.</p>
+    <div id="bulk-table-wrap" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<!-- ──────────── TAB 6: LEAVES ──────────── -->
+<div class="pane" id="pane-6">
+  <div class="card-header">
+    <div class="card-title">Leave Requests</div>
+    <button class="btn btn-primary" onclick="openLeaveModal()">+ Request Leave</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="leave-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ──────────── TAB 7: HOLIDAYS ──────────── -->
+<div class="pane" id="pane-7">
+  <div class="card-header">
+    <div class="card-title">Holidays</div>
+    <button class="btn btn-primary" onclick="openHolModal()">+ Add Holiday</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Day</th><th>Holiday Name</th><th>Actions</th></tr></thead>
+      <tbody id="hol-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ──────────── TAB 8: SALARY SLIPS ──────────── -->
+<div class="pane" id="pane-8">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header"><div class="card-title">Generate Salary Slip</div></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Month</label><input type="month" id="slip-month"></div>
+      <div class="form-group"><label>Employee</label>
+        <select id="slip-emp"><option value="">All Employees</option></select>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="previewSlip()">Preview</button>
+      <button class="btn btn-success" onclick="downloadSlipPDF()">⬇ Download PDF</button>
+    </div>
+  </div>
+  <div id="slip-preview"></div>
+</div>
+
+<!-- ──────────── TAB 9: PAYMENTS ──────────── -->
+<div class="pane" id="pane-9">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header"><div class="card-title">Payroll Runs</div></div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:160px">
+        <label>Month</label><input type="month" id="pay-month">
+      </div>
+      <button class="btn btn-primary" onclick="runPayroll()">▶ Run Payroll</button>
+      <button class="btn btn-ghost" onclick="loadPayments()">↻ Refresh</button>
+    </div>
+    <div id="payroll-runs-list" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" id="pay-table-title">Payments</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-success btn-sm" onclick="bulkMarkPaid('paid')">✔ Mark Paid</button>
+        <button class="btn btn-warn btn-sm" onclick="bulkMarkPaid('hold')">⏸ Hold</button>
+        <button class="btn btn-primary btn-sm" onclick="downloadPaymentPDF()">⬇ PDF</button>
+      </div>
+    </div>
+    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <label style="font-size:.82rem;font-weight:600">Filter:</label>
+      <select id="pay-filter" onchange="renderPaymentsTable()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+        <option value="">All</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="hold">Hold</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th><input type="checkbox" id="pay-chk-all" onchange="toggleAllPayChk(this.checked)"></th>
+          <th>Employee</th><th>Working Days</th><th>Payable Days</th><th>Basic</th>
+          <th>Allowance</th><th>OT</th><th>Gross</th><th>Deductions</th><th>Net</th>
+          <th>Status</th><th>Mode</th><th>Date</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="pay-tbody"></tbody>
+        <tfoot id="pay-tfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────── TAB 10: ADVANCES ──────────── -->
+<div class="pane" id="pane-10">
+  <div class="card-header">
+    <div class="card-title">Advances &amp; Loans</div>
+    <button class="btn btn-primary" onclick="openAdvModal()">+ New Advance</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Employee</th><th>Amount</th><th>Given Date</th><th>Reason</th>
+        <th>Monthly Deduction</th><th>Recovered</th><th>Outstanding</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="adv-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ──────────── TAB 11: SETTINGS ──────────── -->
+<div class="pane" id="pane-11">
+  <div class="card" style="max-width:640px">
+    <div class="card-header"><div class="card-title">Company Settings</div></div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Company Name</label><input type="text" id="set-name"></div>
+      <div class="form-group full"><label>Address</label><input type="text" id="set-address"></div>
+      <div class="form-group"><label>Contact</label><input type="text" id="set-contact"></div>
+      <div class="form-group"><label>Currency Symbol</label><input type="text" id="set-currency" style="max-width:80px"></div>
+      <div class="form-group"><label>Working Days / Month</label>
+        <select id="set-wdays">
+          <option value="auto">Auto (actual days − Sundays − Holidays)</option>
+          <option value="26">Fixed 26</option>
+          <option value="30">Fixed 30</option>
+        </select>
+      </div>
+      <div class="form-group"><label>OT Rate (per hour ₹)</label><input type="number" id="set-ot" min="0"></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+    <p class="section-title">Danger Zone</p>
+    <button class="btn btn-danger btn-sm" onclick="deleteCompany()">🗑 Delete This Company</button>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- ════ MODALS ════ -->
+
+<!-- Company Modal -->
+<div class="modal-overlay" id="co-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="co-modal-title">New Company</h3>
+      <button class="modal-close" onclick="closeModal('co-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Company Name *</label><input type="text" id="co-m-name" placeholder="e.g. ABC Pvt Ltd"></div>
+        <div class="form-group full"><label>Address</label><input type="text" id="co-m-addr"></div>
+        <div class="form-group"><label>Contact</label><input type="text" id="co-m-contact"></div>
+        <div class="form-group"><label>Currency</label><input type="text" id="co-m-currency" value="₹"></div>
+        <div class="form-group"><label>Working Days</label>
+          <select id="co-m-wdays">
+            <option value="auto">Auto</option><option value="26">26</option><option value="30">30</option>
+          </select>
+        </div>
+        <div class="form-group"><label>OT Rate/hr</label><input type="number" id="co-m-ot" value="0" min="0"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('co-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCompany()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Modal -->
+<div class="modal-overlay" id="emp-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="emp-modal-title">Add Employee</h3>
+      <button class="modal-close" onclick="closeModal('emp-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Employee Code *</label><input type="text" id="em-code"></div>
+        <div class="form-group"><label>Full Name *</label><input type="text" id="em-name"></div>
+        <div class="form-group"><label>Designation</label><input type="text" id="em-desig"></div>
+        <div class="form-group"><label>Department</label><input type="text" id="em-dept"></div>
+        <div class="form-group"><label>Join Date</label><input type="date" id="em-join"></div>
+        <div class="form-group"><label>Basic Salary (₹)</label><input type="number" id="em-salary" min="0"></div>
+        <div class="form-group"><label>Allowance (₹/mo)</label><input type="number" id="em-allow" min="0"></div>
+        <div class="form-group"><label>Fixed Deduction (₹/mo)</label><input type="number" id="em-deduct" min="0"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="em-phone"></div>
+        <div class="form-group"><label>Bank Details</label><input type="text" id="em-bank"></div>
+        <div class="form-group"><label>PAN</label><input type="text" id="em-pan"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('emp-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Leave Modal -->
+<div class="modal-overlay" id="leave-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Submit Leave Request</h3>
+      <button class="modal-close" onclick="closeModal('leave-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Employee *</label>
+          <select id="lv-emp"><option value="">Select employee…</option></select>
+        </div>
+        <div class="form-group"><label>Leave Type</label>
+          <select id="lv-type">
+            <option value="PL">Paid Leave</option><option value="ML">Medical Leave</option>
+            <option value="A">Unpaid Leave</option><option value="H">Half Day Leave</option>
+          </select>
+        </div>
+        <div class="form-group"><label>From Date</label><input type="date" id="lv-from"></div>
+        <div class="form-group"><label>To Date</label><input type="date" id="lv-to"></div>
+        <div class="form-group full"><label>Reason</label><input type="text" id="lv-reason" placeholder="Optional reason"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('leave-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitLeave()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Holiday Modal -->
+<div class="modal-overlay" id="hol-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Holiday</h3>
+      <button class="modal-close" onclick="closeModal('hol-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Date *</label><input type="date" id="hol-date"></div>
+        <div class="form-group"><label>Holiday Name *</label><input type="text" id="hol-name" placeholder="e.g. Diwali"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('hol-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHoliday()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Edit Modal -->
+<div class="modal-overlay" id="pay-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Update Payment</h3>
+      <button class="modal-close" onclick="closeModal('pay-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Status</label>
+          <select id="pay-m-status">
+            <option value="pending">Pending</option><option value="paid">Paid</option><option value="hold">Hold</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Payment Mode</label>
+          <select id="pay-m-mode">
+            <option value="">—</option><option value="bank">Bank Transfer</option><option value="cash">Cash</option>
+            <option value="cheque">Cheque</option><option value="upi">UPI</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Payment Date</label><input type="date" id="pay-m-date"></div>
+        <div class="form-group full"><label>Remarks</label><input type="text" id="pay-m-remarks"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('pay-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePayment()">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Advance Modal -->
+<div class="modal-overlay" id="adv-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>New Advance / Loan</h3>
+      <button class="modal-close" onclick="closeModal('adv-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Employee *</label>
+          <select id="adv-emp"><option value="">Select employee…</option></select>
+        </div>
+        <div class="form-group"><label>Amount (₹) *</label><input type="number" id="adv-amount" min="1" oninput="calcMonthly()"></div>
+        <div class="form-group"><label>Given Date</label><input type="date" id="adv-date"></div>
+        <div class="form-group"><label>Repayment Months</label><input type="number" id="adv-months" value="1" min="1" oninput="calcMonthly()"></div>
+        <div class="form-group"><label>Monthly Deduction (₹)</label><input type="number" id="adv-monthly" min="0"></div>
+        <div class="form-group full"><label>Reason</label><input type="text" id="adv-reason"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('adv-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAdvance()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Advance Recover Modal -->
+<div class="modal-overlay" id="adv-recover-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Update Recovery</h3>
+      <button class="modal-close" onclick="closeModal('adv-recover-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Total Amount Recovered (₹)</label>
+          <input type="number" id="adv-r-recovered" min="0">
+        </div>
+        <div class="form-group full"><label>Monthly Deduction (₹)</label>
+          <input type="number" id="adv-r-monthly" min="0">
+        </div>
+        <div class="form-group full"><label>Status</label>
+          <select id="adv-r-status"><option value="active">Active</option><option value="cleared">Cleared</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('adv-recover-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAdvanceRecovery()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let companies = [];
+let activeCompanyId = null;
+let employees = [];
+let attendance = {};  // { empCode: { date: status } }
+let overtime = {};    // { empCode: { date: hours } }
+let holidays = [];    // [{ date, name }]
+let leaves = [];
+let payments = [];
+let advances = [];
+let payrollRuns = [];
+let editingEmpCode = null;  // null = new, string = editing
+let editingCoId = null;
+let editingPayId = null;
+let editingAdvId = null;
+let currentAttDate = todayStr();
+let currentMonth = todayStr().substring(0,7);
+let bulkAttData = {}; // { empCode: { day: status } }
+
+// ═══════════════════════════════════════════════════════════
+//  API HELPERS
+// ═══════════════════════════════════════════════════════════
+const api = {
+  async get(url) {
+    const r = await fetch(url); if (!r.ok) throw new Error(await r.text()); return r.json();
+  },
+  async post(url, body) {
+    const r = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if (!r.ok) throw new Error(await r.text()); return r.json();
+  },
+  async put(url, body) {
+    const r = await fetch(url, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if (!r.ok) throw new Error(await r.text()); return r.json();
+  },
+  async del(url) {
+    const r = await fetch(url, {method:'DELETE'}); if (!r.ok) throw new Error(await r.text()); return r.json();
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════
+function todayStr() { return new Date().toISOString().substring(0,10); }
+function fmt(n) { return Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function cur() { const co = companies.find(c=>c.id===activeCompanyId); return co?.currency||'₹'; }
+function dayName(d) { return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d+'T00:00:00').getDay()]; }
+function daysInMonth(ym) { const [y,m]=ym.split('-').map(Number); return new Date(y,m,0).getDate(); }
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`; el.textContent = msg; t.appendChild(el);
+  setTimeout(()=>el.remove(), 3500);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showTab(n, btn) {
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pane-'+n).classList.add('active');
+  btn.classList.add('active');
+  if (n===1) renderDashboard();
+  if (n===2) renderEmployees();
+  if (n===3) renderDailyAtt();
+  if (n===4) renderMonthly();
+  if (n===5) renderBulkTable();
+  if (n===6) renderLeaves();
+  if (n===7) renderHolidays();
+  if (n===8) populateSlipEmp();
+  if (n===9) loadPayments();
+  if (n===10) loadAdvances();
+  if (n===11) loadSettings();
+}
+function needsCompany() {
+  if (!activeCompanyId) { toast('Please select a company first.','error'); return true; }
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════
+async function boot() {
+  document.getElementById('att-date').value = currentAttDate;
+  document.getElementById('mv-month').value = currentMonth;
+  document.getElementById('bulk-month').value = currentMonth;
+  document.getElementById('slip-month').value = currentMonth;
+  document.getElementById('pay-month').value = currentMonth;
+  document.getElementById('adv-date').value = todayStr();
+  try {
+    companies = await api.get('/api/companies');
+    renderCoGrid();
+    populateCoSelect();
+    const saved = localStorage.getItem('hrms_active_co');
+    if (saved && companies.find(c=>c.id===saved)) {
+      document.getElementById('co-select').value = saved;
+      await switchCompany(saved);
+    }
+  } catch(e) { toast('Cannot connect to server. Is it running?','error'); console.error(e); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COMPANIES
+// ═══════════════════════════════════════════════════════════
+function renderCoGrid() {
+  const g = document.getElementById('co-grid');
+  if (!companies.length) { g.innerHTML = '<div class="empty"><p>No companies yet. Click "+ Add Company" to get started.</p></div>'; return; }
+  g.innerHTML = companies.map(c => `
+    <div class="co-card${c.id===activeCompanyId?' active-co':''}" onclick="coCardClick('${c.id}')">
+      <div class="co-card-actions">
+        <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openCoModal('${c.id}')">✏️</button>
+      </div>
+      <h3>${c.name}</h3>
+      <p>${c.address||'—'}</p>
+      <p style="margin-top:6px"><span class="badge badge-info">${c.emp_count||0} Employees</span></p>
+    </div>`).join('');
+}
+
+function populateCoSelect() {
+  const sel = document.getElementById('co-select');
+  sel.innerHTML = '<option value="">— Select Company —</option>' +
+    companies.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  if (activeCompanyId) sel.value = activeCompanyId;
+}
+
+async function coCardClick(id) {
+  document.getElementById('co-select').value = id;
+  await switchCompany(id);
+}
+
+async function switchCompany(id) {
+  if (!id) { activeCompanyId=null; return; }
+  activeCompanyId = id;
+  localStorage.setItem('hrms_active_co', id);
+  try {
+    [employees, attendance, overtime, holidays, leaves] = await Promise.all([
+      api.get(`/api/companies/${id}/employees`),
+      api.get(`/api/companies/${id}/attendance?month=${currentMonth}`),
+      api.get(`/api/companies/${id}/overtime?month=${currentMonth}`),
+      api.get(`/api/companies/${id}/holidays`),
+      api.get(`/api/companies/${id}/leaves`)
+    ]);
+    renderCoGrid();
+    renderEmployees();
+    toast(`Switched to ${companies.find(c=>c.id===id)?.name}`,'info');
+  } catch(e) { toast('Error loading company data','error'); }
+}
+
+function openCoModal(id=null) {
+  editingCoId = id;
+  const co = id ? companies.find(c=>c.id===id) : null;
+  document.getElementById('co-modal-title').textContent = id ? 'Edit Company' : 'New Company';
+  document.getElementById('co-m-name').value = co?.name||'';
+  document.getElementById('co-m-addr').value = co?.address||'';
+  document.getElementById('co-m-contact').value = co?.contact||'';
+  document.getElementById('co-m-currency').value = co?.currency||'₹';
+  document.getElementById('co-m-wdays').value = co?.working_days||'auto';
+  document.getElementById('co-m-ot').value = co?.ot_rate||0;
+  openModal('co-modal');
+}
+
+async function saveCompany() {
+  const name = document.getElementById('co-m-name').value.trim();
+  if (!name) { toast('Company name required','error'); return; }
+  const body = {
+    name, address:document.getElementById('co-m-addr').value.trim(),
+    contact:document.getElementById('co-m-contact').value.trim(),
+    currency:document.getElementById('co-m-currency').value.trim()||'₹',
+    working_days:document.getElementById('co-m-wdays').value,
+    ot_rate:parseFloat(document.getElementById('co-m-ot').value)||0
+  };
+  try {
+    if (editingCoId) {
+      await api.put(`/api/companies/${editingCoId}`, body);
+    } else {
+      body.id = 'co_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+      await api.post('/api/companies', body);
+    }
+    companies = await api.get('/api/companies');
+    renderCoGrid(); populateCoSelect();
+    closeModal('co-modal'); toast('Company saved!');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard() {
+  if (!activeCompanyId) { document.getElementById('dash-stats').innerHTML='<p style="color:var(--text2)">Select a company to view dashboard.</p>'; return; }
+  const today = todayStr();
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let P=0,A=0,H=0,PL=0,ML=0,NM=0;
+  employees.forEach(e=>{
+    const s = attendance[e.code]?.[today];
+    if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
+    else if (s==='PL') PL++; else if (s==='ML') ML++; else NM++;
+  });
+  const totalSalary = employees.reduce((s,e)=>s+parseFloat(e.salary||0),0);
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card"><div class="label">Total Employees</div><div class="value">${employees.length}</div></div>
+    <div class="stat-card"><div class="label">Present Today</div><div class="value" style="color:var(--success)">${P}</div></div>
+    <div class="stat-card"><div class="label">Absent Today</div><div class="value" style="color:var(--danger)">${A}</div></div>
+    <div class="stat-card"><div class="label">On Leave</div><div class="value" style="color:var(--warn)">${PL+ML}</div></div>
+    <div class="stat-card"><div class="label">Not Marked</div><div class="value" style="color:var(--text3)">${NM}</div></div>
+    <div class="stat-card"><div class="label">Monthly Payroll</div><div class="value" style="font-size:1.1rem">${cur()}${fmt(totalSalary)}</div></div>`;
+  const pending = leaves.filter(l=>l.status==='pending');
+  document.getElementById('dash-att-summary').innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      ${empBadge('Present',P,'badge-success')}${empBadge('Absent',A,'badge-danger')}
+      ${empBadge('Half Day',H,'badge-warn')}${empBadge('Paid Leave',PL,'badge-purple')}
+      ${empBadge('Medical',ML,'badge-info')}${empBadge('Not Marked',NM,'badge-gray')}
+    </div>
+    ${pending.length?`<p style="margin-top:16px;color:var(--warn);font-weight:600">⚠️ ${pending.length} leave request(s) pending approval</p>`:''}`;
+}
+function empBadge(label, count, cls) {
+  return `<div class="stat-card" style="min-width:100px;padding:12px"><div class="label">${label}</div><div class="value" style="font-size:1.4rem">${count}</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EMPLOYEES
+// ═══════════════════════════════════════════════════════════
+function renderEmployees() {
+  const q = (document.getElementById('emp-search')?.value||'').toLowerCase();
+  const list = employees.filter(e=>!q||e.name.toLowerCase().includes(q)||e.code.toLowerCase().includes(q)||e.designation?.toLowerCase().includes(q));
+  const tb = document.getElementById('emp-tbody');
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="8" class="empty">No employees found.</td></tr>`; return; }
+  tb.innerHTML = list.map((e,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><span class="badge badge-gray">${e.code}</span></td>
+      <td><strong>${e.name}</strong></td>
+      <td>${e.designation||'—'}</td>
+      <td>${e.department||'—'}</td>
+      <td>${cur()}${fmt(e.salary)}</td>
+      <td>${e.phone||'—'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-xs" onclick="openEmpModal('${e.code}')">✏️</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteEmployee('${e.code}')">🗑</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openEmpModal(code=null) {
+  if (needsCompany()) return;
+  editingEmpCode = code;
+  const e = code ? employees.find(x=>x.code===code) : null;
+  document.getElementById('emp-modal-title').textContent = code ? 'Edit Employee' : 'Add Employee';
+  document.getElementById('em-code').value = e?.code||'';
+  document.getElementById('em-code').disabled = !!code;
+  document.getElementById('em-name').value = e?.name||'';
+  document.getElementById('em-desig').value = e?.designation||'';
+  document.getElementById('em-dept').value = e?.department||'';
+  document.getElementById('em-join').value = e?.join_date?.substring?.(0,10)||e?.join_date||'';
+  document.getElementById('em-salary').value = e?.salary||0;
+  document.getElementById('em-allow').value = e?.allowance||0;
+  document.getElementById('em-deduct').value = e?.deduction||0;
+  document.getElementById('em-phone').value = e?.phone||'';
+  document.getElementById('em-bank').value = e?.bank||'';
+  document.getElementById('em-pan').value = e?.pan||'';
+  openModal('emp-modal');
+}
+
+async function saveEmployee() {
+  const code = document.getElementById('em-code').value.trim().toUpperCase();
+  const name = document.getElementById('em-name').value.trim();
+  if (!code||!name) { toast('Code and Name required','error'); return; }
+  const body = {
+    code, name,
+    designation:document.getElementById('em-desig').value.trim(),
+    department:document.getElementById('em-dept').value.trim(),
+    join_date:document.getElementById('em-join').value||null,
+    salary:parseFloat(document.getElementById('em-salary').value)||0,
+    allowance:parseFloat(document.getElementById('em-allow').value)||0,
+    deduction:parseFloat(document.getElementById('em-deduct').value)||0,
+    phone:document.getElementById('em-phone').value.trim(),
+    bank:document.getElementById('em-bank').value.trim(),
+    pan:document.getElementById('em-pan').value.trim()
+  };
+  try {
+    if (editingEmpCode) {
+      await api.put(`/api/companies/${activeCompanyId}/employees/${editingEmpCode}`, body);
+    } else {
+      await api.post(`/api/companies/${activeCompanyId}/employees`, body);
+    }
+    employees = await api.get(`/api/companies/${activeCompanyId}/employees`);
+    renderEmployees();
+    populateSlipEmp();
+    closeModal('emp-modal'); toast('Employee saved!');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function deleteEmployee(code) {
+  if (!confirm('Delete employee '+code+'? All attendance records will also be removed.')) return;
+  try {
+    await api.del(`/api/companies/${activeCompanyId}/employees/${code}`);
+    employees = await api.get(`/api/companies/${activeCompanyId}/employees`);
+    renderEmployees(); toast('Employee deleted');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DAILY ATTENDANCE
+// ═══════════════════════════════════════════════════════════
+async function renderDailyAtt() {
+  if (needsCompany()) return;
+  currentAttDate = document.getElementById('att-date').value || todayStr();
+  // Refresh attendance for that month
+  const month = currentAttDate.substring(0,7);
+  if (month !== currentMonth) {
+    currentMonth = month;
+    attendance = await api.get(`/api/companies/${activeCompanyId}/attendance?month=${month}`);
+    overtime = await api.get(`/api/companies/${activeCompanyId}/overtime?month=${month}`);
+  }
+  const tb = document.getElementById('daily-tbody');
+  if (!employees.length) { tb.innerHTML='<tr><td colspan="4" class="empty">No employees</td></tr>'; return; }
+  const statuses = ['','P','A','H','PL','ML'];
+  const statusColors = {'P':'#d1fae5','A':'#fee2e2','H':'#fef3c7','PL':'#ede9fe','ML':'#e0f2fe','':'#f1f5f9'};
+  tb.innerHTML = employees.map((e,i) => {
+    const s = attendance[e.code]?.[currentAttDate] || '';
+    const ot = overtime[e.code]?.[currentAttDate] || 0;
+    const btns = statuses.map(st => `
+      <button class="att-status-btn${st===s?' att-'+st:''}"
+        style="background:${st===s?statusColors[st]:'#f8fafc'};border-color:${st===s?'#94a3b8':'transparent'}"
+        onclick="setAtt('${e.code}','${currentAttDate}','${st}')">${st||'—'}</button>`).join('');
+    return `<tr>
+      <td>${i+1}</td>
+      <td><strong>${e.name}</strong><br><span style="font-size:.75rem;color:var(--text3)">${e.code}</span></td>
+      <td><div class="att-status-row">${btns}</div></td>
+      <td><input type="number" min="0" max="24" step="0.5" value="${ot||''}" placeholder="0"
+        style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:.82rem"
+        onchange="setOT('${e.code}','${currentAttDate}',this.value)"></td>
+    </tr>`;
+  }).join('');
+}
+
+async function setAtt(code, date, status) {
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/attendance`, {employee_code:code, date, status});
+    if (!attendance[code]) attendance[code]={};
+    if (!status) delete attendance[code][date];
+    else attendance[code][date] = status;
+    renderDailyAtt();
+  } catch(e) { toast('Error saving: '+e.message,'error'); }
+}
+
+async function setOT(code, date, hours) {
+  const h = parseFloat(hours)||0;
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/overtime`, {employee_code:code, date, hours:h});
+    if (!overtime[code]) overtime[code]={};
+    overtime[code][date] = h;
+  } catch(e) { toast('Error saving OT','error'); }
+}
+
+async function markAllDaily(status) {
+  if (!employees.length) return;
+  const records = employees.map(e=>({employee_code:e.code, date:currentAttDate, status}));
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/attendance/bulk`, {records});
+    employees.forEach(e=>{
+      if (!attendance[e.code]) attendance[e.code]={};
+      attendance[e.code][currentAttDate]=status;
+    });
+    renderDailyAtt(); toast(`Marked all as ${status}`);
+  } catch(e) { toast('Error','error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MONTHLY VIEW
+// ═══════════════════════════════════════════════════════════
+async function renderMonthly() {
+  if (needsCompany()) return;
+  const month = document.getElementById('mv-month').value || currentMonth;
+  if (month !== currentMonth) {
+    currentMonth = month;
+    attendance = await api.get(`/api/companies/${activeCompanyId}/attendance?month=${month}`);
+    overtime   = await api.get(`/api/companies/${activeCompanyId}/overtime?month=${month}`);
+  }
+  const [y,m] = month.split('-').map(Number);
+  const days = daysInMonth(month);
+  const holSet = new Set(holidays.filter(h=>h.date.startsWith(month)).map(h=>h.date));
+  const wrap = document.getElementById('monthly-wrap');
+  let html = '<table style="min-width:900px;width:100%;border-collapse:collapse;font-size:.72rem">';
+  // Header
+  html += '<thead><tr><th style="position:sticky;left:0;background:#f8fafc;z-index:2;min-width:140px;padding:8px">Employee</th>';
+  for (let d=1;d<=days;d++) {
+    const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const wd = new Date(ds+'T00:00:00').getDay();
+    const isHol = holSet.has(ds);
+    html += `<th style="min-width:30px;text-align:center;padding:4px;${wd===0||isHol?'color:var(--danger)':''}">${d}<br><span style="font-weight:400">${['Su','Mo','Tu','We','Th','Fr','Sa'][wd]}</span></th>`;
+  }
+  html += '<th>P</th><th>A</th><th>H</th><th>PL</th><th>ML</th><th>Total OT hrs</th></tr></thead><tbody>';
+  employees.forEach(e => {
+    let P=0,A=0,H=0,PL=0,ML=0,totalOT=0;
+    html += `<tr><td style="position:sticky;left:0;background:#fff;z-index:1;padding:6px 8px;border-right:1px solid var(--border)"><strong>${e.name}</strong><br><span style="color:var(--text3)">${e.code}</span></td>`;
+    for (let d=1;d<=days;d++) {
+      const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const wd = new Date(ds+'T00:00:00').getDay();
+      const isHol = holSet.has(ds);
+      const s = attendance[e.code]?.[ds];
+      const oth = overtime[e.code]?.[ds]||0;
+      if (oth) totalOT += oth;
+      if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++; else if (s==='PL') PL++; else if (s==='ML') ML++;
+      let bg='';
+      if (s) bg = {P:'#d1fae5',A:'#fee2e2',H:'#fef3c7',PL:'#ede9fe',ML:'#e0f2fe'}[s]||'';
+      else if (isHol) bg='#fdf4ff'; else if (wd===0) bg='#f1f5f9';
+      html += `<td style="text-align:center;padding:3px;background:${bg};border:1px solid #f0f0f0">${s||(isHol?'H':wd===0?'W':'')}</td>`;
+    }
+    html += `<td style="text-align:center;font-weight:700;color:var(--success)">${P}</td>
+      <td style="text-align:center;font-weight:700;color:var(--danger)">${A}</td>
+      <td style="text-align:center">${H}</td><td style="text-align:center">${PL}</td>
+      <td style="text-align:center">${ML}</td>
+      <td style="text-align:center">${totalOT>0?totalOT:''}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BULK ATTENDANCE
+// ═══════════════════════════════════════════════════════════
+async function applyBulk() {
+  if (needsCompany()) return;
+  const month = document.getElementById('bulk-month').value;
+  const status = document.getElementById('bulk-default').value;
+  if (!month) { toast('Select a month','error'); return; }
+  const [y,m] = month.split('-').map(Number);
+  const days = daysInMonth(month);
+  const holSet = new Set(holidays.filter(h=>h.date.startsWith(month)).map(h=>h.date));
+  const records = [];
+  employees.forEach(e => {
+    for (let d=1;d<=days;d++) {
+      const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const wd = new Date(ds+'T00:00:00').getDay();
+      if (wd===0 || holSet.has(ds)) return;
+      records.push({employee_code:e.code, date:ds, status});
+    }
+  });
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/attendance/bulk`, {records});
+    if (month===currentMonth) {
+      attendance = await api.get(`/api/companies/${activeCompanyId}/attendance?month=${month}`);
+    }
+    toast(`Applied ${status} to all employees for ${month}`);
+    renderBulkTable();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function renderBulkTable() {
+  if (!activeCompanyId || !employees.length) return;
+  const month = document.getElementById('bulk-month').value || currentMonth;
+  if (month !== currentMonth) {
+    currentMonth = month;
+    attendance = await api.get(`/api/companies/${activeCompanyId}/attendance?month=${month}`);
+  }
+  const [y,m] = month.split('-').map(Number);
+  const days = daysInMonth(month);
+  const holSet = new Set(holidays.filter(h=>h.date.startsWith(month)).map(h=>h.date));
+  let html = '<table style="min-width:900px;border-collapse:collapse;font-size:.72rem">';
+  html += '<thead><tr><th style="position:sticky;left:0;background:#f8fafc;z-index:2;min-width:130px;padding:8px">Employee</th>';
+  for (let d=1;d<=days;d++) {
+    const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const wd = new Date(ds+'T00:00:00').getDay();
+    const isH = holSet.has(ds);
+    html += `<th style="min-width:26px;text-align:center;padding:3px;${wd===0||isH?'color:var(--danger)':''}">${d}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+  const statuses = ['P','A','H','PL','ML',''];
+  const statColors = {P:'#bbf7d0',A:'#fecaca',H:'#fef08a',PL:'#ddd6fe',ML:'#bae6fd','':'#f1f5f9'};
+  employees.forEach(e=>{
+    html += `<tr><td style="position:sticky;left:0;background:#fff;z-index:1;padding:5px 8px;border-right:1px solid var(--border)">${e.name}</td>`;
+    for (let d=1;d<=days;d++){
+      const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const wd = new Date(ds+'T00:00:00').getDay();
+      const isH = holSet.has(ds);
+      const s = attendance[e.code]?.[ds]||'';
+      if (wd===0){html+=`<td style="background:#f1f5f9;text-align:center;font-size:.65rem;color:#94a3b8">W</td>`;continue;}
+      if (isH){html+=`<td style="background:#fdf4ff;text-align:center;font-size:.65rem;color:#7e22ce">H</td>`;continue;}
+      html += `<td style="background:${statColors[s]||'#fff'};text-align:center;cursor:pointer;border:1px solid #eee"
+        onclick="cycleBulkCell('${e.code}','${ds}',this)">${s||'·'}</td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('bulk-table-wrap').innerHTML = html;
+}
+
+async function cycleBulkCell(code, date, el) {
+  const cycle = ['P','A','H','PL','ML',''];
+  const statColors = {P:'#bbf7d0',A:'#fecaca',H:'#fef08a',PL:'#ddd6fe',ML:'#bae6fd','':'#fff'};
+  const cur = el.textContent.trim()==='·'?'':el.textContent.trim();
+  const ni = (cycle.indexOf(cur)+1)%cycle.length;
+  const ns = cycle[ni];
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/attendance`, {employee_code:code, date, status:ns});
+    if (!attendance[code]) attendance[code]={};
+    if (!ns) delete attendance[code][date];
+    else attendance[code][date]=ns;
+    el.textContent = ns||'·';
+    el.style.background = statColors[ns]||'#fff';
+  } catch(e) { toast('Error saving','error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LEAVES
+// ═══════════════════════════════════════════════════════════
+function renderLeaves() {
+  const tb = document.getElementById('leave-tbody');
+  if (!leaves.length) { tb.innerHTML='<tr><td colspan="8" class="empty">No leave requests</td></tr>'; return; }
+  const sorted = [...leaves].sort((a,b)=>new Date(b.submitted_at)-new Date(a.submitted_at));
+  tb.innerHTML = sorted.map(l=>{
+    const emp = employees.find(e=>e.code===l.employee_code);
+    const from = new Date(l.from+'T00:00:00'), to = new Date(l.to+'T00:00:00');
+    const days = Math.round((to-from)/(86400000))+1;
+    const badgeCls = {pending:'badge-warn',approved:'badge-success',rejected:'badge-danger'}[l.status]||'badge-gray';
+    return `<tr>
+      <td><strong>${emp?.name||l.employee_code}</strong></td>
+      <td><span class="badge badge-info">${l.type}</span></td>
+      <td>${l.from}</td><td>${l.to}</td><td>${days}</td>
+      <td>${l.reason||'—'}</td>
+      <td><span class="badge ${badgeCls}">${l.status}</span></td>
+      <td style="display:flex;gap:4px">
+        ${l.status==='pending'?`
+          <button class="btn btn-success btn-xs" onclick="updateLeave('${l.id}','approved','${l.employee_code}','${l.type}','${l.from}','${l.to}','${l.reason}')">✓</button>
+          <button class="btn btn-danger btn-xs" onclick="updateLeave('${l.id}','rejected','${l.employee_code}','${l.type}','${l.from}','${l.to}','${l.reason}')">✗</button>`:''}
+        <button class="btn btn-ghost btn-xs" onclick="deleteLeave('${l.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openLeaveModal() {
+  if (needsCompany()) return;
+  document.getElementById('lv-emp').innerHTML = '<option value="">Select employee…</option>'+
+    employees.map(e=>`<option value="${e.code}">${e.name} (${e.code})</option>`).join('');
+  const t = todayStr();
+  document.getElementById('lv-from').value = t;
+  document.getElementById('lv-to').value = t;
+  document.getElementById('lv-reason').value = '';
+  openModal('leave-modal');
+}
+
+async function submitLeave() {
+  const emp = document.getElementById('lv-emp').value;
+  const type = document.getElementById('lv-type').value;
+  const from = document.getElementById('lv-from').value;
+  const to = document.getElementById('lv-to').value;
+  if (!emp||!from||!to) { toast('Fill all required fields','error'); return; }
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/leaves`, {
+      id:'lr_'+Date.now(),employee_code:emp, type, from, to,
+      reason:document.getElementById('lv-reason').value.trim()
+    });
+    leaves = await api.get(`/api/companies/${activeCompanyId}/leaves`);
+    renderLeaves(); closeModal('leave-modal'); toast('Leave request submitted');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function updateLeave(id, status, emp_code, type, from, to, reason) {
+  try {
+    await api.put(`/api/companies/${activeCompanyId}/leaves/${id}`, {employee_code:emp_code,type,from,to,reason,status});
+    if (status==='approved') {
+      // Auto-apply to attendance
+      const d1=new Date(from+'T00:00:00'), d2=new Date(to+'T00:00:00');
+      const records=[];
+      for (let d=new Date(d1);d<=d2;d.setDate(d.getDate()+1)){
+        const ds=d.toISOString().substring(0,10);
+        records.push({employee_code:emp_code,date:ds,status:type});
+      }
+      await api.post(`/api/companies/${activeCompanyId}/attendance/bulk`, {records});
+      attendance = await api.get(`/api/companies/${activeCompanyId}/attendance?month=${currentMonth}`);
+    }
+    leaves = await api.get(`/api/companies/${activeCompanyId}/leaves`);
+    renderLeaves(); toast('Leave '+status);
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function deleteLeave(id) {
+  if (!confirm('Delete this leave request?')) return;
+  try {
+    await api.del(`/api/companies/${activeCompanyId}/leaves/${id}`);
+    leaves = leaves.filter(l=>l.id!==id);
+    renderLeaves(); toast('Deleted');
+  } catch(e) { toast('Error','error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HOLIDAYS
+// ═══════════════════════════════════════════════════════════
+function renderHolidays() {
+  const tb = document.getElementById('hol-tbody');
+  if (!holidays.length) { tb.innerHTML='<tr><td colspan="4" class="empty">No holidays added</td></tr>'; return; }
+  const sorted = [...holidays].sort((a,b)=>a.date.localeCompare(b.date));
+  tb.innerHTML = sorted.map(h=>`<tr>
+    <td>${h.date}</td>
+    <td>${dayName(h.date)}</td>
+    <td>${h.name}</td>
+    <td><button class="btn btn-danger btn-xs" onclick="deleteHoliday('${h.date}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+function openHolModal() {
+  if (needsCompany()) return;
+  document.getElementById('hol-date').value = todayStr();
+  document.getElementById('hol-name').value = '';
+  openModal('hol-modal');
+}
+
+async function saveHoliday() {
+  const date = document.getElementById('hol-date').value;
+  const name = document.getElementById('hol-name').value.trim();
+  if (!date||!name) { toast('Date and name required','error'); return; }
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/holidays`, {date, name});
+    holidays = await api.get(`/api/companies/${activeCompanyId}/holidays`);
+    renderHolidays(); closeModal('hol-modal'); toast('Holiday added');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function deleteHoliday(date) {
+  if (!confirm('Delete this holiday?')) return;
+  try {
+    await api.del(`/api/companies/${activeCompanyId}/holidays/${date}`);
+    holidays = holidays.filter(h=>h.date!==date);
+    renderHolidays(); toast('Holiday removed');
+  } catch(e) { toast('Error','error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SALARY SLIPS
+// ═══════════════════════════════════════════════════════════
+function populateSlipEmp() {
+  const sel = document.getElementById('slip-emp');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All Employees</option>'+
+    employees.map(e=>`<option value="${e.code}">${e.name} (${e.code})</option>`).join('');
+}
+
+function calcSalary(emp, month) {
+  const [y,m] = month.split('-').map(Number);
+  const daysTotal = daysInMonth(month);
+  const holSet = new Set(holidays.filter(h=>h.date.startsWith(month)).map(h=>h.date));
+  const co = companies.find(c=>c.id===activeCompanyId)||{};
+  let P=0,A=0,H=0,PL=0,ML=0,W=0,HOL=0,bj=0,totalOT=0;
+  for (let d=1;d<=daysTotal;d++){
+    const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const wd = new Date(ds+'T00:00:00').getDay();
+    const joinStr = emp.join_date?.substring?.(0,10)||emp.join_date||'';
+    if (joinStr && ds < joinStr) { bj++; continue; }
+    if (overtime[emp.code]?.[ds]) totalOT += overtime[emp.code][ds];
+    const s = attendance[emp.code]?.[ds];
+    if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
+    else if (s==='PL') PL++; else if (s==='ML') ML++;
+    else if (holSet.has(ds)) HOL++;
+    else if (wd===0) W++;
+  }
+  let workingDays = daysTotal;
+  if (co.working_days==='auto') { workingDays = daysTotal-W-HOL-bj; if (workingDays<1) workingDays=1; }
+  else if (co.working_days==='26') workingDays=26;
+  else if (co.working_days==='30') workingDays=30;
+  const payableDays = P + H*0.5 + PL + ML;
+  const perDay = parseFloat(emp.salary||0) / workingDays;
+  const basicEarned = perDay * payableDays;
+  const allowanceEarned = parseFloat(emp.allowance||0) * (payableDays/workingDays);
+  const otAmt = totalOT * parseFloat(co.ot_rate||0);
+  const gross = basicEarned + allowanceEarned + otAmt;
+  const statutory = parseFloat(emp.deduction||0);
+  const net = gross - statutory;
+  return { workingDays, payableDays, P, A, H, PL, ML, totalOT, basicEarned, allowanceEarned, otAmt, gross, statutory, net };
+}
+
+async function previewSlip() {
+  if (needsCompany()) return;
+  const month = document.getElementById('slip-month').value || currentMonth;
+  const empCode = document.getElementById('slip-emp').value;
+  if (month !== currentMonth) {
+    currentMonth = month;
+    attendance = await api.get(`/api/companies/${activeCompanyId}/attendance?month=${month}`);
+    overtime   = await api.get(`/api/companies/${activeCompanyId}/overtime?month=${month}`);
+  }
+  const co = companies.find(c=>c.id===activeCompanyId)||{};
+  const c = co.currency||'₹';
+  const list = empCode ? employees.filter(e=>e.code===empCode) : employees;
+  const preview = document.getElementById('slip-preview');
+  if (!list.length) { preview.innerHTML='<p>No employees</p>'; return; }
+  preview.innerHTML = list.map(emp => {
+    const s = calcSalary(emp, month);
+    return `<div style="border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:20px;page-break-after:always">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--primary);padding-bottom:10px;margin-bottom:10px">
+        <div><div class="slip-logo">${co.name}</div><div style="font-size:.78rem;color:var(--text2)">${co.address||''}</div></div>
+        <div style="text-align:right"><div style="font-weight:700">SALARY SLIP</div><div style="font-size:.8rem;color:var(--text2)">${month}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.82rem;margin-bottom:12px">
+        <div><strong>Name:</strong> ${emp.name}</div><div><strong>Code:</strong> ${emp.code}</div>
+        <div><strong>Designation:</strong> ${emp.designation||'—'}</div><div><strong>Department:</strong> ${emp.department||'—'}</div>
+        <div><strong>Join Date:</strong> ${emp.join_date?.substring?.(0,10)||emp.join_date||'—'}</div>
+        <div><strong>Bank:</strong> ${emp.bank||'—'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:.8rem;background:var(--bg);padding:10px;border-radius:8px;margin-bottom:12px">
+        <div>Working Days: <strong>${s.workingDays}</strong></div>
+        <div>Payable Days: <strong>${s.payableDays.toFixed(2)}</strong></div>
+        <div>Present: <strong>${s.P}</strong> | Half: <strong>${s.H}</strong></div>
+        <div>PL: <strong>${s.PL}</strong> | ML: <strong>${s.ML}</strong> | Absent: <strong>${s.A}</strong></div>
+        ${s.totalOT?`<div>OT Hours: <strong>${s.totalOT}</strong></div>`:''}
+      </div>
+      <table class="slip-table">
+        <tr><th style="width:50%">Earnings</th><th>Amount</th><th style="width:50%">Deductions</th><th>Amount</th></tr>
+        <tr><td>Basic Salary Earned</td><td>${c}${fmt(s.basicEarned)}</td><td>Fixed Deduction</td><td>${c}${fmt(s.statutory)}</td></tr>
+        ${parseFloat(emp.allowance||0)?`<tr><td>Allowance</td><td>${c}${fmt(s.allowanceEarned)}</td><td></td><td></td></tr>`:''}
+        ${s.otAmt?`<tr><td>Overtime (${s.totalOT}hrs)</td><td>${c}${fmt(s.otAmt)}</td><td></td><td></td></tr>`:''}
+        <tr style="font-weight:700;background:var(--bg)"><td>Gross</td><td>${c}${fmt(s.gross)}</td><td>Total Deductions</td><td>${c}${fmt(s.statutory)}</td></tr>
+        <tr style="font-weight:800;color:var(--primary)"><td colspan="2">NET PAYABLE</td><td colspan="2">${c}${fmt(s.net)}</td></tr>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+async function downloadSlipPDF() {
+  await previewSlip();
+  const month = document.getElementById('slip-month').value || currentMonth;
+  const co = companies.find(c=>c.id===activeCompanyId)||{};
+  const empCode = document.getElementById('slip-emp').value;
+  const list = empCode ? employees.filter(e=>e.code===empCode) : employees;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  list.forEach((emp, idx) => {
+    if (idx>0) doc.addPage();
+    const s = calcSalary(emp, month);
+    const c = co.currency||'₹';
+    doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(co.name||'Company', 14, 18);
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(co.address||'', 14, 25);
+    doc.setFontSize(13); doc.setFont('helvetica','bold');
+    doc.text('SALARY SLIP — '+month, 140, 18, {align:'right'});
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.autoTable({startY:32,theme:'grid',styles:{fontSize:9},
+      head:[['Field','Value','Field','Value']],
+      body:[
+        ['Employee',''+emp.name,'Code',''+emp.code],
+        ['Designation',''+( emp.designation||''),  'Department',''+( emp.department||'')],
+        ['Working Days',''+s.workingDays,'Payable Days',''+s.payableDays.toFixed(2)],
+        ['Present',''+s.P,'Absent',''+s.A],
+        ['Paid Leave',''+s.PL,'Medical Leave',''+s.ML],
+      ]});
+    const y1 = doc.lastAutoTable.finalY + 6;
+    doc.autoTable({startY:y1,theme:'striped',styles:{fontSize:9},
+      head:[['Earnings','Amount','Deductions','Amount']],
+      body:[
+        ['Basic Earned',c+fmt(s.basicEarned),'Fixed Deduction',c+fmt(s.statutory)],
+        ...(parseFloat(emp.allowance||0)?[['Allowance',c+fmt(s.allowanceEarned),'','']]:[] ),
+        ...(s.otAmt?[['Overtime ('+s.totalOT+'hrs)',c+fmt(s.otAmt),'','']]:[] ),
+        ['GROSS',c+fmt(s.gross),'TOTAL DEDUCTIONS',c+fmt(s.statutory)],
+        ['NET PAYABLE','','',c+fmt(s.net)],
+      ]});
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text('Generated on '+new Date().toLocaleDateString('en-IN'), 14, 285);
+  });
+  doc.save(`Salary-Slips-${month}.pdf`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PAYMENTS
+// ═══════════════════════════════════════════════════════════
+async function loadPayments() {
+  if (!activeCompanyId) return;
+  try {
+    payrollRuns = await api.get(`/api/companies/${activeCompanyId}/payroll`);
+    renderPayrollRunsList();
+    const month = document.getElementById('pay-month').value || currentMonth;
+    await loadPaymentsForMonth(month);
+  } catch(e) { toast('Error loading payments','error'); }
+}
+
+function renderPayrollRunsList() {
+  const el = document.getElementById('payroll-runs-list');
+  if (!payrollRuns.length) { el.innerHTML='<p style="color:var(--text3);font-size:.84rem">No payroll runs yet. Select a month and click "Run Payroll".</p>'; return; }
+  el.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+    payrollRuns.map(r=>`
+      <div class="stat-card" style="min-width:160px;cursor:pointer" onclick="loadPaymentsForMonthClick('${r.month}')">
+        <div class="label">${r.month}</div>
+        <div style="font-size:.9rem;font-weight:700;color:var(--success)">Net: ${cur()}${fmt(r.total_net)}</div>
+        <div style="font-size:.76rem;color:var(--text2)">Gross: ${cur()}${fmt(r.total_gross)}</div>
+        <div style="font-size:.72rem;color:var(--text3)">Run: ${r.run_date?.substring?.(0,10)||r.run_date}</div>
+      </div>`).join('')+'</div>';
+}
+
+async function loadPaymentsForMonthClick(month) {
+  document.getElementById('pay-month').value = month;
+  await loadPaymentsForMonth(month);
+}
+
+async function loadPaymentsForMonth(month) {
+  try {
+    payments = await api.get(`/api/companies/${activeCompanyId}/payroll/${month}/payments`);
+    document.getElementById('pay-table-title').textContent = `Payments — ${month}`;
+    renderPaymentsTable();
+  } catch(e) { payments=[]; renderPaymentsTable(); }
+}
+
+function renderPaymentsTable() {
+  const filter = document.getElementById('pay-filter')?.value||'';
+  const c = cur();
+  const list = filter ? payments.filter(p=>p.status===filter) : payments;
+  const tb = document.getElementById('pay-tbody');
+  const tf = document.getElementById('pay-tfoot');
+  if (!list.length) {
+    tb.innerHTML=`<tr><td colspan="14" class="empty">No payment records. Run payroll first.</td></tr>`;
+    tf.innerHTML=''; return;
+  }
+  const statusBadge = s => s==='paid'?'badge-success':s==='hold'?'badge-danger':'badge-warn';
+  tb.innerHTML = list.map(p=>`
+    <tr>
+      <td><input type="checkbox" class="pay-chk" value="${p.id}"></td>
+      <td><strong>${p.employee_name||p.employee_code}</strong><br>
+        <span style="font-size:.72rem;color:var(--text3)">${p.employee_code} ${p.department?'· '+p.department:''}</span></td>
+      <td style="text-align:center">${p.working_days}</td>
+      <td style="text-align:center">${parseFloat(p.payable_days||0).toFixed(2)}</td>
+      <td>${c}${fmt(p.basic_earned)}</td>
+      <td>${c}${fmt(p.allowance_earned)}</td>
+      <td>${c}${fmt(p.ot_amount)}</td>
+      <td style="font-weight:600">${c}${fmt(p.gross_amount)}</td>
+      <td style="color:var(--danger)">${c}${fmt((parseFloat(p.statutory_deduct||0)+parseFloat(p.advance_deducted||0)).toFixed(2))}</td>
+      <td style="font-weight:700;color:var(--success)">${c}${fmt(p.net_amount)}</td>
+      <td><span class="badge ${statusBadge(p.status)}">${p.status}</span></td>
+      <td>${p.payment_mode||'—'}</td>
+      <td>${p.payment_date?.substring?.(0,10)||p.payment_date||'—'}</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="openPayModal(${p.id},'${p.status}','${p.payment_mode||''}','${p.payment_date?.substring?.(0,10)||p.payment_date||''}','${(p.remarks||'').replace(/'/g,"\\'")}')">✏️</button></td>
+    </tr>`).join('');
+  // Totals
+  const totGross = list.reduce((s,p)=>s+parseFloat(p.gross_amount||0),0);
+  const totNet   = list.reduce((s,p)=>s+parseFloat(p.net_amount||0),0);
+  const totDeduct= list.reduce((s,p)=>s+parseFloat(p.statutory_deduct||0)+parseFloat(p.advance_deducted||0),0);
+  tf.innerHTML = `<tr style="font-weight:700;background:var(--bg)">
+    <td colspan="7">TOTALS (${list.length} employees)</td>
+    <td>${c}${fmt(totGross)}</td><td style="color:var(--danger)">${c}${fmt(totDeduct)}</td>
+    <td style="color:var(--success)">${c}${fmt(totNet)}</td><td colspan="4"></td></tr>`;
+}
+
+async function runPayroll() {
+  if (needsCompany()) return;
+  const month = document.getElementById('pay-month').value;
+  if (!month) { toast('Select a month','error'); return; }
+  if (!confirm(`Run payroll for ${month}? This will recalculate all employee payments.`)) return;
+  try {
+    const r = await api.post(`/api/companies/${activeCompanyId}/payroll/run`, {month});
+    toast(`Payroll done: ${r.employee_count} employees, Net: ${cur()}${fmt(r.total_net)}`);
+    await loadPayments();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+function openPayModal(id, status, mode, date, remarks) {
+  editingPayId = id;
+  document.getElementById('pay-m-status').value = status||'pending';
+  document.getElementById('pay-m-mode').value = mode||'';
+  document.getElementById('pay-m-date').value = date||todayStr();
+  document.getElementById('pay-m-remarks').value = remarks||'';
+  openModal('pay-modal');
+}
+
+async function savePayment() {
+  try {
+    await api.put(`/api/companies/${activeCompanyId}/payments/${editingPayId}`, {
+      status:document.getElementById('pay-m-status').value,
+      payment_mode:document.getElementById('pay-m-mode').value,
+      payment_date:document.getElementById('pay-m-date').value,
+      remarks:document.getElementById('pay-m-remarks').value
+    });
+    const month = document.getElementById('pay-month').value || currentMonth;
+    payments = await api.get(`/api/companies/${activeCompanyId}/payroll/${month}/payments`);
+    renderPaymentsTable(); closeModal('pay-modal'); toast('Payment updated');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+function toggleAllPayChk(checked) {
+  document.querySelectorAll('.pay-chk').forEach(c=>c.checked=checked);
+}
+
+async function bulkMarkPaid(status) {
+  const ids = [...document.querySelectorAll('.pay-chk:checked')].map(c=>parseInt(c.value));
+  if (!ids.length) { toast('Select at least one payment','error'); return; }
+  const mode = prompt('Payment mode? (bank/cash/cheque/upi)','bank')||'bank';
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/payments/bulk-status`, {
+      ids, status, payment_mode:mode, payment_date:todayStr()
+    });
+    const month = document.getElementById('pay-month').value || currentMonth;
+    payments = await api.get(`/api/companies/${activeCompanyId}/payroll/${month}/payments`);
+    renderPaymentsTable(); toast(`Marked ${ids.length} payments as ${status}`);
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+function downloadPaymentPDF() {
+  const month = document.getElementById('pay-month').value || currentMonth;
+  const co = companies.find(c=>c.id===activeCompanyId)||{};
+  const filter = document.getElementById('pay-filter')?.value||'';
+  const list = filter ? payments.filter(p=>p.status===filter) : payments;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l','mm','a4');
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text((co.name||'Company')+' — Payment Report — '+month, 14, 14);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  const c = co.currency||'₹';
+  doc.autoTable({startY:20,theme:'striped',styles:{fontSize:8},
+    head:[['#','Employee','Working Days','Payable Days','Basic','Allowance','OT','Gross','Deductions','Net Pay','Status','Mode','Date']],
+    body: list.map((p,i)=>[
+      i+1, (p.employee_name||p.employee_code)+'\n'+p.employee_code,
+      p.working_days, parseFloat(p.payable_days||0).toFixed(2),
+      c+fmt(p.basic_earned), c+fmt(p.allowance_earned), c+fmt(p.ot_amount),
+      c+fmt(p.gross_amount),
+      c+fmt(parseFloat(p.statutory_deduct||0)+parseFloat(p.advance_deducted||0)),
+      c+fmt(p.net_amount), p.status, p.payment_mode||'—',
+      p.payment_date?.substring?.(0,10)||p.payment_date||'—'
+    ]),
+    foot:[['',' TOTALS','','','','','',
+      c+fmt(list.reduce((s,p)=>s+parseFloat(p.gross_amount||0),0)),'',
+      c+fmt(list.reduce((s,p)=>s+parseFloat(p.net_amount||0),0)),'','',''
+    ]]
+  });
+  doc.save(`Payments-${month}.pdf`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ADVANCES
+// ═══════════════════════════════════════════════════════════
+async function loadAdvances() {
+  if (!activeCompanyId) return;
+  try {
+    advances = await api.get(`/api/companies/${activeCompanyId}/advances`);
+    renderAdvances();
+  } catch(e) { toast('Error loading advances','error'); }
+}
+
+function renderAdvances() {
+  const tb = document.getElementById('adv-tbody');
+  if (!advances.length) { tb.innerHTML='<tr><td colspan="9" class="empty">No advances or loans</td></tr>'; return; }
+  const c = cur();
+  tb.innerHTML = advances.map(a=>{
+    const outstanding = parseFloat(a.amount)-parseFloat(a.amount_recovered||0);
+    const badgeCls = a.status==='cleared'?'badge-success':'badge-warn';
+    return `<tr>
+      <td><strong>${a.employee_name||a.employee_code}</strong><br>
+        <span style="font-size:.72rem;color:var(--text3)">${a.employee_code}</span></td>
+      <td>${c}${fmt(a.amount)}</td>
+      <td>${a.given_date?.substring?.(0,10)||a.given_date||'—'}</td>
+      <td>${a.reason||'—'}</td>
+      <td>${c}${fmt(a.monthly_deduction)}/mo</td>
+      <td style="color:var(--success)">${c}${fmt(a.amount_recovered)}</td>
+      <td style="font-weight:700;color:${outstanding>0?'var(--danger)':'var(--success)'}">${c}${fmt(outstanding)}</td>
+      <td><span class="badge ${badgeCls}">${a.status}</span></td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-warn btn-xs" onclick="openAdvRecover(${a.id},${a.amount_recovered},${a.monthly_deduction},'${a.status}')">💰</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteAdvance(${a.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openAdvModal() {
+  if (needsCompany()) return;
+  document.getElementById('adv-emp').innerHTML = '<option value="">Select employee…</option>'+
+    employees.map(e=>`<option value="${e.code}">${e.name} (${e.code})</option>`).join('');
+  document.getElementById('adv-amount').value='';
+  document.getElementById('adv-date').value=todayStr();
+  document.getElementById('adv-months').value=1;
+  document.getElementById('adv-monthly').value='';
+  document.getElementById('adv-reason').value='';
+  openModal('adv-modal');
+}
+
+function calcMonthly() {
+  const amount = parseFloat(document.getElementById('adv-amount').value)||0;
+  const months = parseInt(document.getElementById('adv-months').value)||1;
+  document.getElementById('adv-monthly').value = months>0 ? (amount/months).toFixed(2) : '';
+}
+
+async function saveAdvance() {
+  const emp = document.getElementById('adv-emp').value;
+  const amount = parseFloat(document.getElementById('adv-amount').value);
+  if (!emp||!amount) { toast('Employee and amount required','error'); return; }
+  try {
+    await api.post(`/api/companies/${activeCompanyId}/advances`, {
+      employee_code:emp, amount,
+      reason:document.getElementById('adv-reason').value.trim(),
+      given_date:document.getElementById('adv-date').value,
+      repayment_months:parseInt(document.getElementById('adv-months').value)||1,
+      monthly_deduction:parseFloat(document.getElementById('adv-monthly').value)||amount
+    });
+    advances = await api.get(`/api/companies/${activeCompanyId}/advances`);
+    renderAdvances(); closeModal('adv-modal'); toast('Advance recorded');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+function openAdvRecover(id, recovered, monthly, status) {
+  editingAdvId = id;
+  document.getElementById('adv-r-recovered').value = recovered||0;
+  document.getElementById('adv-r-monthly').value = monthly||0;
+  document.getElementById('adv-r-status').value = status||'active';
+  openModal('adv-recover-modal');
+}
+
+async function saveAdvanceRecovery() {
+  try {
+    await api.put(`/api/companies/${activeCompanyId}/advances/${editingAdvId}`, {
+      amount_recovered:parseFloat(document.getElementById('adv-r-recovered').value)||0,
+      monthly_deduction:parseFloat(document.getElementById('adv-r-monthly').value)||0,
+      status:document.getElementById('adv-r-status').value
+    });
+    advances = await api.get(`/api/companies/${activeCompanyId}/advances`);
+    renderAdvances(); closeModal('adv-recover-modal'); toast('Recovery updated');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function deleteAdvance(id) {
+  if (!confirm('Delete this advance record?')) return;
+  try {
+    await api.del(`/api/companies/${activeCompanyId}/advances/${id}`);
+    advances = advances.filter(a=>a.id!==id);
+    renderAdvances(); toast('Deleted');
+  } catch(e) { toast('Error','error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════════
+function loadSettings() {
+  if (!activeCompanyId) return;
+  const co = companies.find(c=>c.id===activeCompanyId);
+  if (!co) return;
+  document.getElementById('set-name').value = co.name||'';
+  document.getElementById('set-address').value = co.address||'';
+  document.getElementById('set-contact').value = co.contact||'';
+  document.getElementById('set-currency').value = co.currency||'₹';
+  document.getElementById('set-wdays').value = co.working_days||'auto';
+  document.getElementById('set-ot').value = co.ot_rate||0;
+}
+
+async function saveSettings() {
+  if (!activeCompanyId) return;
+  try {
+    const updated = await api.put(`/api/companies/${activeCompanyId}`, {
+      name:document.getElementById('set-name').value.trim(),
+      address:document.getElementById('set-address').value.trim(),
+      contact:document.getElementById('set-contact').value.trim(),
+      currency:document.getElementById('set-currency').value.trim()||'₹',
+      working_days:document.getElementById('set-wdays').value,
+      ot_rate:parseFloat(document.getElementById('set-ot').value)||0
+    });
+    companies = await api.get('/api/companies');
+    populateCoSelect(); renderCoGrid();
+    toast('Settings saved!');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+async function deleteCompany() {
+  if (!activeCompanyId) return;
+  const co = companies.find(c=>c.id===activeCompanyId);
+  if (!confirm(`Delete "${co?.name}"? ALL data for this company will be permanently deleted.`)) return;
+  if (!confirm('This cannot be undone. Delete anyway?')) return;
+  try {
+    await api.del(`/api/companies/${activeCompanyId}`);
+    activeCompanyId = null;
+    companies = await api.get('/api/companies');
+    employees=[]; attendance={}; overtime={}; holidays=[]; leaves=[];
+    renderCoGrid(); populateCoSelect();
+    localStorage.removeItem('hrms_active_co');
+    toast('Company deleted');
+    showTab(0, document.querySelector('.tab-btn'));
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MONTHLY PDF (Attendance Report)
+// ═══════════════════════════════════════════════════════════
+async function downloadMonthlyPDF() {
+  if (needsCompany()) return;
+  const month = document.getElementById('mv-month').value || currentMonth;
+  const co = companies.find(c=>c.id===activeCompanyId)||{};
+  const [y,m] = month.split('-').map(Number);
+  const days = daysInMonth(month);
+  const holSet = new Set(holidays.filter(h=>h.date.startsWith(month)).map(h=>h.date));
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l','mm','a4');
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text((co.name||'Company')+' — Attendance Report — '+month, 14, 14);
+
+  const head = ['Employee',...Array.from({length:days},(_,i)=>String(i+1)),'P','A','H','PL','ML'];
+  const body = employees.map(emp=>{
+    let P=0,A=0,H=0,PL=0,ML=0;
+    const days_arr = Array.from({length:days},(_,i)=>{
+      const d = i+1;
+      const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const wd = new Date(ds+'T00:00:00').getDay();
+      const s = attendance[emp.code]?.[ds];
+      if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
+      else if (s==='PL') PL++; else if (s==='ML') ML++;
+      if (s) return s; if (holSet.has(ds)) return 'H'; if (wd===0) return 'W'; return '';
+    });
+    return [emp.name,...days_arr,P,A,H,PL,ML];
+  });
+
+  doc.autoTable({startY:20,theme:'grid',styles:{fontSize:6,cellPadding:1.5},
+    head:[head],body,
+    columnStyles:{0:{cellWidth:28,fontStyle:'bold'}}
+  });
+  doc.save(`Attendance-${month}.pdf`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
