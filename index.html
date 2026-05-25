@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Multi-Company HR Management System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue-900:#1e3a8a;--blue-800:#1e40af;--blue-700:#1d4ed8;
+  --blue-600:#2563eb;--blue-500:#3b82f6;--blue-100:#dbeafe;--blue-50:#eff6ff;
+  --gray-900:#111827;--gray-800:#1f2937;--gray-700:#374151;
+  --gray-600:#4b5563;--gray-500:#6b7280;--gray-400:#9ca3af;
+  --gray-300:#d1d5db;--gray-200:#e5e7eb;--gray-100:#f3f4f6;--gray-50:#f9fafb;
+  --green-700:#047857;--green-600:#059669;--green-100:#d1fae5;
+  --red-700:#b91c1c;--red-600:#dc2626;--red-100:#fee2e2;
+  --yellow-600:#d97706;--yellow-500:#f59e0b;--yellow-100:#fef3c7;
+  --purple-600:#7c3aed;--purple-100:#ede9fe;
+  --orange-500:#f97316;--orange-100:#ffedd5;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);
+  --radius:10px;--radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#eef2f7;color:var(--gray-900);min-height:100vh}
+
+/* ── HEADER ── */
+header{
+  background:linear-gradient(135deg,#0f2460 0%,#1e3a8a 40%,#1d4ed8 100%);
+  color:white;padding:0 24px;
+  display:flex;align-items:stretch;
+  box-shadow:0 2px 16px rgba(15,36,96,.4);
+  position:sticky;top:0;z-index:60;min-height:58px;
+}
+.hdr-brand{display:flex;align-items:center;gap:12px;padding:10px 0;border-right:1px solid rgba(255,255,255,.15);padding-right:20px;margin-right:16px;flex-shrink:0}
+.hdr-logo{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.2);overflow:hidden;flex-shrink:0}
+.hdr-logo img{width:100%;height:100%;object-fit:contain}
+.hdr-app-name{font-size:15px;font-weight:700;letter-spacing:-.2px;line-height:1.2}
+.hdr-app-sub{font-size:10px;opacity:.65;letter-spacing:.3px}
+
+/* Company Switcher */
+.company-switcher{
+  display:flex;align-items:center;gap:10px;flex:1;
+  position:relative;padding:8px 0;
+}
+.company-label{font-size:10px;opacity:.65;font-weight:600;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.company-select-btn{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);
+  color:white;padding:7px 12px;border-radius:8px;
+  cursor:pointer;font-size:14px;font-weight:600;
+  transition:background .15s;min-width:220px;max-width:340px;
+}
+.company-select-btn:hover{background:rgba(255,255,255,.2)}
+.company-select-btn .name{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.company-select-btn .arrow{opacity:.7;font-size:10px;flex-shrink:0}
+.company-count-badge{background:rgba(255,255,255,.2);padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+
+/* Company Dropdown */
+.company-dropdown{
+  position:absolute;top:calc(100% + 4px);left:0;
+  background:white;border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);z-index:200;
+  width:340px;overflow:hidden;
+  border:1px solid var(--gray-200);
+}
+.co-search-wrap{padding:12px;border-bottom:1px solid var(--gray-100)}
+.co-search{width:100%;padding:8px 12px;border:1.5px solid var(--gray-300);border-radius:8px;font-size:14px;font-family:inherit}
+.co-search:focus{outline:none;border-color:var(--blue-500)}
+.co-list{max-height:320px;overflow-y:auto}
+.co-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;cursor:pointer;transition:background .1s;
+  border-bottom:1px solid var(--gray-50);
+}
+.co-item:hover{background:var(--blue-50)}
+.co-item.active{background:var(--blue-50);border-left:3px solid var(--blue-600)}
+.co-item .co-logo{width:32px;height:32px;border-radius:7px;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--blue-700);overflow:hidden;flex-shrink:0}
+.co-item .co-logo img{width:100%;height:100%;object-fit:contain}
+.co-item .co-name{font-size:13.5px;font-weight:600;color:var(--gray-900)}
+.co-item .co-emp{font-size:11px;color:var(--gray-500);margin-top:1px}
+.co-item .co-tick{margin-left:auto;color:var(--blue-600);font-size:16px;flex-shrink:0}
+.co-footer{padding:10px 14px;border-top:1px solid var(--gray-200);display:flex;gap:8px}
+
+.hdr-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+
+/* ── NAV ── */
+nav{
+  background:white;padding:0 24px;
+  display:flex;gap:2px;
+  border-bottom:1px solid var(--gray-200);
+  overflow-x:auto;box-shadow:var(--shadow-xs);
+}
+nav::-webkit-scrollbar{height:0}
+nav button{
+  background:transparent;border:none;
+  padding:12px 15px;cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--gray-500);
+  border-bottom:3px solid transparent;
+  transition:all .15s;white-space:nowrap;
+  position:relative;top:1px;
+}
+nav button:hover{color:var(--blue-600);background:var(--blue-50);border-radius:8px 8px 0 0}
+nav button.active{color:var(--blue-800);border-bottom-color:var(--blue-600);font-weight:700}
+
+/* ── MAIN ── */
+main{padding:22px 26px;max-width:1480px;margin:0 auto}
+
+/* Company header strip */
+.company-strip{
+  background:white;border:1px solid var(--gray-200);
+  border-radius:var(--radius);padding:14px 20px;
+  margin-bottom:18px;
+  display:flex;align-items:center;gap:14px;
+  box-shadow:var(--shadow-xs);
+}
+.company-strip .co-logo-lg{width:44px;height:44px;border-radius:9px;background:var(--blue-50);border:1px solid var(--blue-100);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--blue-700);overflow:hidden;flex-shrink:0}
+.company-strip .co-logo-lg img{width:100%;height:100%;object-fit:contain}
+.company-strip .co-info h2{font-size:16px;font-weight:700;color:var(--gray-900)}
+.company-strip .co-info p{font-size:12px;color:var(--gray-500);margin-top:2px}
+.company-strip .co-actions{margin-left:auto;display:flex;gap:8px}
+
+/* ── CARDS ── */
+.card{background:white;border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow-sm);margin-bottom:16px;border:1px solid var(--gray-200)}
+.card h2{font-size:16px;margin-bottom:14px;color:var(--gray-900);font-weight:700}
+.card h3{font-size:13.5px;margin:14px 0 8px;color:var(--gray-700);font-weight:600}
+
+/* ── FORM ── */
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+.field label{font-size:11px;color:var(--gray-600);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{
+  padding:8px 11px;border:1.5px solid var(--gray-300);border-radius:7px;
+  font-size:13.5px;font-family:inherit;background:white;color:var(--gray-900);
+  transition:border-color .15s,box-shadow .15s;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+
+/* ── BUTTONS ── */
+button.btn{
+  background:var(--blue-600);color:white;border:none;
+  padding:8px 16px;border-radius:7px;cursor:pointer;
+  font-size:13px;font-weight:600;
+  transition:background .15s,transform .08s,box-shadow .15s;
+  box-shadow:0 1px 3px rgba(37,99,235,.25);white-space:nowrap;
+}
+button.btn:hover{background:var(--blue-800);box-shadow:0 2px 8px rgba(37,99,235,.35)}
+button.btn:active{transform:scale(.97)}
+button.btn.secondary{background:var(--gray-600);box-shadow:none}
+button.btn.secondary:hover{background:var(--gray-700)}
+button.btn.danger{background:var(--red-600);box-shadow:none}
+button.btn.danger:hover{background:var(--red-700)}
+button.btn.success{background:var(--green-600);box-shadow:none}
+button.btn.success:hover{background:var(--green-700)}
+button.btn.warning{background:var(--yellow-500);color:white;box-shadow:none}
+button.btn.warning:hover{background:var(--yellow-600)}
+button.btn.small{padding:5px 10px;font-size:12px;border-radius:6px}
+button.btn.outline{background:transparent;color:var(--blue-600);border:1.5px solid var(--blue-600);box-shadow:none}
+button.btn.outline:hover{background:var(--blue-50)}
+button.btn.ghost{background:rgba(255,255,255,.15);color:white;box-shadow:none;border:1px solid rgba(255,255,255,.25)}
+button.btn.ghost:hover{background:rgba(255,255,255,.25)}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 11px;background:var(--gray-50);color:var(--gray-700);font-weight:700;border-bottom:2px solid var(--gray-200);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:10px 11px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--blue-50)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:.2px}
+.badge.P{background:var(--green-100);color:#065f46}
+.badge.A{background:var(--red-100);color:#991b1b}
+.badge.H{background:var(--yellow-100);color:#92400e}
+.badge.PL{background:var(--blue-100);color:#1e40af}
+.badge.ML{background:var(--purple-100);color:#5b21b6}
+.badge.OT{background:#fef9c3;color:#713f12}
+
+/* ── STAT CARDS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.stat{background:white;border:1px solid var(--gray-200);padding:16px 18px;border-radius:var(--radius);box-shadow:var(--shadow-xs);position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue-600),var(--blue-500))}
+.stat .v{font-size:26px;font-weight:800;color:var(--blue-800);line-height:1}
+.stat .l{font-size:11.5px;color:var(--gray-500);margin-top:5px;font-weight:500}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:36px 20px;color:var(--gray-400);font-size:13.5px}
+.text-right{text-align:right}
+.text-muted{color:var(--gray-500);font-size:12.5px}
+.pill{display:inline-block;padding:2px 9px;border-radius:12px;background:var(--blue-50);color:var(--blue-800);font-size:11.5px;font-weight:600;border:1px solid var(--blue-100)}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .spacer{flex:1}
+.hidden{display:none!important}
+
+/* Status buttons */
+.status-buttons{display:flex;gap:3px;flex-wrap:wrap}
+.status-buttons button{border:1.5px solid var(--gray-300);background:white;padding:3px 9px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:700;color:var(--gray-600);transition:all .12s}
+.status-buttons button:hover{border-color:var(--blue-500);color:var(--blue-600)}
+.status-buttons button.active.P{background:#10b981;color:white;border-color:#10b981}
+.status-buttons button.active.A{background:#ef4444;color:white;border-color:#ef4444}
+.status-buttons button.active.H{background:#f59e0b;color:white;border-color:#f59e0b}
+.status-buttons button.active.PL{background:#3b82f6;color:white;border-color:#3b82f6}
+.status-buttons button.active.ML{background:#8b5cf6;color:white;border-color:#8b5cf6}
+
+/* Calendar */
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
+.calendar .day-head{text-align:center;font-size:10.5px;font-weight:700;color:var(--gray-500);padding:5px 0;text-transform:uppercase;letter-spacing:.4px}
+.calendar .day{aspect-ratio:1;border:1.5px solid var(--gray-200);border-radius:7px;padding:3px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-size:10.5px;background:white;transition:all .12s}
+.calendar .day:hover{border-color:var(--blue-500);box-shadow:0 0 0 2px rgba(59,130,246,.18)}
+.calendar .day.empty{background:var(--gray-50);cursor:default;border-color:transparent}
+.calendar .day.weekend{background:var(--gray-50)}
+.calendar .day.holiday{background:#fff7ed;border-color:#fb923c}
+.calendar .day.P{background:#d1fae5;border-color:#10b981}
+.calendar .day.A{background:#fee2e2;border-color:#ef4444}
+.calendar .day.H{background:#fef3c7;border-color:#f59e0b}
+.calendar .day.PL{background:#dbeafe;border-color:#3b82f6}
+.calendar .day.ML{background:#ede9fe;border-color:#8b5cf6}
+.calendar .day .n{font-weight:700;font-size:13px;color:var(--gray-800)}
+.calendar .day .s{font-size:9.5px;font-weight:700}
+
+/* Legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;margin-top:14px;padding:10px 12px;background:var(--gray-50);border-radius:7px;border:1px solid var(--gray-200)}
+.legend span{display:flex;align-items:center;gap:5px;font-weight:500}
+.legend .box{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:white;border-radius:var(--radius-lg);padding:24px;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px rgba(0,0,0,.2)}
+.modal h3{margin-bottom:16px;font-size:16px;font-weight:700}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;border-top:1px solid var(--gray-200);padding-top:14px}
+
+/* Section title */
+.section-title{font-size:12px;font-weight:700;color:var(--blue-800);text-transform:uppercase;letter-spacing:.6px;margin:18px 0 8px;padding-bottom:5px;border-bottom:2px solid var(--blue-100)}
+
+/* Leave badges */
+.leave-pending{background:var(--yellow-100);color:#92400e;padding:2px 8px;border-radius:9px;font-size:11px;font-weight:700}
+.leave-approved{background:var(--green-100);color:#065f46;padding:2px 8px;border-radius:9px;font-size:11px;font-weight:700}
+.leave-rejected{background:var(--red-100);color:#991b1b;padding:2px 8px;border-radius:9px;font-size:11px;font-weight:700}
+
+/* Nav badge */
+.nav-badge{display:inline-block;background:var(--red-600);color:white;font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:3px;vertical-align:middle;line-height:1.4}
+
+/* OT input */
+.ot-input{width:60px;padding:4px 6px;border:1.5px solid var(--gray-300);border-radius:5px;font-size:12.5px;text-align:center}
+.ot-input:focus{border-color:var(--blue-500);outline:none}
+
+/* Companies overview cards */
+.companies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
+.company-card{
+  background:white;border:1px solid var(--gray-200);border-radius:var(--radius);
+  padding:16px 18px;box-shadow:var(--shadow-xs);cursor:pointer;
+  transition:all .15s;position:relative;
+}
+.company-card:hover{border-color:var(--blue-400);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.company-card.active-co{border-color:var(--blue-500);box-shadow:0 0 0 2px rgba(59,130,246,.2)}
+.company-card .cc-logo{width:40px;height:40px;border-radius:8px;background:var(--blue-50);border:1px solid var(--blue-100);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--blue-700);overflow:hidden;margin-bottom:10px}
+.company-card .cc-logo img{width:100%;height:100%;object-fit:contain}
+.company-card .cc-name{font-size:14px;font-weight:700;color:var(--gray-900);margin-bottom:4px}
+.company-card .cc-meta{font-size:12px;color:var(--gray-500)}
+.company-card .cc-stats{display:flex;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-100)}
+.company-card .cc-stat{font-size:12px;color:var(--gray-600)}<br>.company-card .cc-stat b{display:block;font-size:15px;color:var(--blue-800);font-weight:800}
+.company-card .cc-badge{position:absolute;top:10px;right:10px;background:var(--blue-600);color:white;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700}
+
+@media(max-width:768px){
+  .grid-2,.grid-3,.grid-4,.grid-5{grid-template-columns:1fr}
+  header{padding:0 14px}
+  main{padding:12px}
+  .company-select-btn{min-width:160px}
+  .modal{padding:16px}
+  .hdr-brand{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     HEADER
+══════════════════════════════════════ -->
+<header>
+  <div class="hdr-brand">
+    <div class="hdr-logo">
+      <img id="hdrLogoImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z'/></svg>" alt=""/>
+    </div>
+    <div>
+      <div class="hdr-app-name">HR Management</div>
+      <div class="hdr-app-sub">MULTI-COMPANY</div>
+    </div>
+  </div>
+
+  <!-- Company Switcher -->
+  <div class="company-switcher" id="companySwitcher">
+    <span class="company-label">Company</span>
+    <button class="company-select-btn" onclick="toggleCompanyDropdown()">
+      <span class="name" id="hdrCompanyName">Select a company</span>
+      <span class="arrow">&#9660;</span>
+    </button>
+    <span class="company-count-badge" id="coCountBadge">0 companies</span>
+
+    <!-- Dropdown -->
+    <div class="company-dropdown hidden" id="companyDropdown">
+      <div class="co-search-wrap">
+        <input class="co-search" type="text" placeholder="Search companies&#x2026;" id="coSearchInput" oninput="renderCompanyDropdown()" autocomplete="off"/>
+      </div>
+      <div class="co-list" id="coListItems"></div>
+      <div class="co-footer">
+        <button class="btn small success" onclick="openAddCompanyModal();closeCompanyDropdown()">+ Add Company</button>
+        <button class="btn small secondary" onclick="switchTab('companies');closeCompanyDropdown()">Manage All</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hdr-actions">
+    <button class="btn ghost small" onclick="exportAllData()">&#8595; Backup All</button>
+    <button class="btn ghost small" onclick="document.getElementById('importFile').click()">&#8593; Restore</button>
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)"/>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════
+     NAV
+══════════════════════════════════════ -->
+<nav>
+  <button class="active" data-tab="companies" onclick="switchTab('companies')">&#127970; Companies</button>
+  <button data-tab="dashboard"  onclick="switchTab('dashboard')">Dashboard</button>
+  <button data-tab="employees"  onclick="switchTab('employees')">Employees</button>
+  <button data-tab="daily"      onclick="switchTab('daily')">Daily Attendance</button>
+  <button data-tab="monthly"    onclick="switchTab('monthly')">Monthly View</button>
+  <button data-tab="bulk"       onclick="switchTab('bulk')">Bulk Attendance</button>
+  <button data-tab="leaves"     onclick="switchTab('leaves')">Leave Requests <span id="pendingBadge" class="nav-badge hidden">0</span></button>
+  <button data-tab="holidays"   onclick="switchTab('holidays')">Holidays</button>
+  <button data-tab="salary"     onclick="switchTab('salary')">Salary Slips</button>
+  <button data-tab="settings"   onclick="switchTab('settings')">Settings</button>
+</nav>
+
+<main>
+
+<!-- ══════════════ COMPANIES OVERVIEW ══════════════ -->
+<section id="tab-companies">
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0">All Companies</h2>
+      <span class="pill" id="totalCoCount">0 companies</span>
+      <div class="spacer"></div>
+      <input type="text" id="coFilterInput" placeholder="Filter companies&#x2026;" oninput="renderCompaniesTab()" style="min-width:200px">
+      <button class="btn" onclick="openAddCompanyModal()">+ Add Company</button>
+    </div>
+    <div id="companiesGrid" class="companies-grid"></div>
+  </div>
+</section>
+
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<section id="tab-dashboard" class="hidden">
+  <div id="companyStripDash" class="company-strip hidden"></div>
+  <div class="grid-5" style="margin-bottom:18px">
+    <div class="stat"><div class="v" id="statEmp">0</div><div class="l">Employees</div></div>
+    <div class="stat"><div class="v" id="statPresent">0</div><div class="l">Present Today</div></div>
+    <div class="stat"><div class="v" id="statAbsent">0</div><div class="l">Absent Today</div></div>
+    <div class="stat"><div class="v" id="statLeave">0</div><div class="l">On Leave Today</div></div>
+    <div class="stat"><div class="v" id="statPayroll">—</div><div class="l">Monthly Payroll</div></div>
+  </div>
+  <div class="card">
+    <h2>Today's Attendance Snapshot</h2>
+    <div id="dashAttendance"></div>
+  </div>
+</section>
+
+<!-- ══════════════ EMPLOYEES ══════════════ -->
+<section id="tab-employees" class="hidden">
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0">Employees</h2>
+      <span class="pill" id="empCount">0 total</span>
+      <div class="spacer"></div>
+      <input type="text" id="empSearch" placeholder="Search name or code&#x2026;" oninput="renderEmployees()" style="min-width:200px">
+      <button class="btn" onclick="openEmpModal()">+ Add Employee</button>
+    </div>
+    <div class="table-wrap" id="empTableWrap"></div>
+  </div>
+</section>
+
+<!-- ══════════════ DAILY ATTENDANCE ══════════════ -->
+<section id="tab-daily" class="hidden">
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0">Daily Attendance</h2>
+      <div class="spacer"></div>
+      <div class="field" style="flex:0"><label>Date</label><input type="date" id="dailyDate" onchange="renderDaily()"></div>
+      <button class="btn success small" onclick="markAllToday('P')">&#10003; Mark All Present</button>
+    </div>
+    <div id="dailyHolidayBanner" class="hidden" style="background:#fff7ed;border:1px solid #fb923c;border-radius:7px;padding:9px 13px;margin-bottom:12px;font-size:13px;color:#9a3412;"></div>
+    <div class="table-wrap" id="dailyTableWrap"></div>
+    <div class="legend">
+      <span><div class="box" style="background:#10b981"></div>P – Present</span>
+      <span><div class="box" style="background:#ef4444"></div>A – Absent</span>
+      <span><div class="box" style="background:#f59e0b"></div>H – Half Day</span>
+      <span><div class="box" style="background:#3b82f6"></div>PL – Paid Leave</span>
+      <span><div class="box" style="background:#8b5cf6"></div>ML – Medical Leave</span>
+      <span><div class="box" style="background:#ca8a04"></div>OT hrs</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ MONTHLY VIEW ══════════════ -->
+<section id="tab-monthly" class="hidden">
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0">Monthly Attendance</h2>
+      <div class="spacer"></div>
+      <div class="field" style="flex:0"><label>Employee</label><select id="monthlyEmp" onchange="renderMonthly()"></select></div>
+      <div class="field" style="flex:0"><label>Month</label><input type="month" id="monthlyMonth" onchange="renderMonthly()"></div>
+      <button class="btn outline small" onclick="downloadMonthlyReport()">&#8595; Report PDF</button>
+    </div>
+    <div id="monthlyView"></div>
+  </div>
+</section>
+
+<!-- ══════════════ BULK ATTENDANCE ══════════════ -->
+<section id="tab-bulk" class="hidden">
+  <div class="card">
+    <h2>Bulk Attendance</h2>
+    <p class="text-muted" style="margin-bottom:14px">Apply same status across a date range. Sundays and holidays excluded by default.</p>
+    <div class="row">
+      <div class="field"><label>From Date</label><input type="date" id="bulkFrom"></div>
+      <div class="field"><label>To Date</label><input type="date" id="bulkTo"></div>
+      <div class="field"><label>Status</label>
+        <select id="bulkStatus">
+          <option value="P">Present</option><option value="A">Absent</option>
+          <option value="H">Half Day</option><option value="PL">Paid Leave</option>
+          <option value="ML">Medical Leave</option>
+        </select>
+      </div>
+      <div class="field"><label>Skip Sundays</label><select id="bulkSkipSun"><option value="1">Yes</option><option value="0">No</option></select></div>
+      <div class="field"><label>Skip Holidays</label><select id="bulkSkipHol"><option value="1">Yes</option><option value="0">No</option></select></div>
+    </div>
+    <div class="section-title">Select Employees</div>
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn small secondary" onclick="bulkSelectAll(true)">Select All</button>
+      <button class="btn small secondary" onclick="bulkSelectAll(false)">Clear All</button>
+    </div>
+    <div id="bulkEmpList" style="max-height:260px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:7px;padding:8px;"></div>
+    <div style="margin-top:14px"><button class="btn" onclick="applyBulk()">Apply Bulk Attendance</button></div>
+  </div>
+</section>
+
+<!-- ══════════════ LEAVE REQUESTS ══════════════ -->
+<section id="tab-leaves" class="hidden">
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0">Leave Requests</h2>
+      <div class="spacer"></div>
+      <button class="btn" onclick="openLeaveModal()">+ New Request</button>
+    </div>
+    <div id="leaveTableWrap"></div>
+  </div>
+</section>
+
+<!-- ══════════════ HOLIDAYS ══════════════ -->
+<section id="tab-holidays" class="hidden">
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0">Holiday Calendar</h2>
+      <span class="pill" id="holCount">0 holidays</span>
+      <div class="spacer"></div>
+      <div class="field" style="flex:0"><label>Year</label><input type="number" id="holYear" style="width:88px" onchange="renderHolidays()"></div>
+    </div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="field"><label>Date</label><input type="date" id="holDate"></div>
+      <div class="field"><label>Holiday Name</label><input type="text" id="holName" placeholder="e.g. Diwali, Republic Day&#x2026;"></div>
+      <div style="align-self:flex-end"><button class="btn" onclick="addHoliday()">+ Add Holiday</button></div>
+    </div>
+    <div class="table-wrap" id="holTableWrap"></div>
+  </div>
+</section>
+
+<!-- ══════════════ SALARY SLIPS ══════════════ -->
+<section id="tab-salary" class="hidden">
+  <div class="card">
+    <h2>Generate Salary Slip</h2>
+    <div class="row">
+      <div class="field"><label>Employee</label><select id="slipEmp" onchange="previewSlip()"></select></div>
+      <div class="field"><label>Month</label><input type="month" id="slipMonth" onchange="previewSlip()"></div>
+      <div class="field" style="flex:0"><label>&nbsp;</label><button class="btn success" onclick="downloadSlip()">&#8595; Download PDF</button></div>
+    </div>
+    <div id="slipPreview" style="margin-top:18px"></div>
+  </div>
+</section>
+
+<!-- ══════════════ SETTINGS ══════════════ -->
+<section id="tab-settings" class="hidden">
+  <div class="card">
+    <h2>Company Settings</h2>
+    <div class="grid-2">
+      <div class="field"><label>Company Name</label><input type="text" id="setCompany" placeholder="Acme Industries Pvt Ltd"></div>
+      <div class="field"><label>Phone / Email</label><input type="text" id="setContact" placeholder="+91 98765 43210"></div>
+      <div class="field" style="grid-column:1/-1"><label>Address</label><textarea id="setAddress" rows="2" placeholder="Full registered address"></textarea></div>
+      <div class="field"><label>Currency Symbol</label><input type="text" id="setCurrency" placeholder="&#8377; / $ / AED / &pound;" maxlength="4"></div>
+      <div class="field"><label>Working Days / Month</label>
+        <select id="setWorkingDays">
+          <option value="auto">Auto (calendar − Sundays − Holidays)</option>
+          <option value="26">26 days</option>
+          <option value="30">30 days</option>
+          <option value="calendar">All calendar days</option>
+        </select>
+      </div>
+      <div class="field"><label>Overtime Rate (per hour)</label><input type="number" id="setOTRate" placeholder="150" min="0" step="0.01"></div>
+      <div class="field"><label>Company Logo</label><input type="file" id="setLogo" accept="image/*" onchange="uploadLogo(event)"></div>
+      <div class="field"><label>Logo Preview</label><img id="logoPreview" style="max-height:52px;max-width:140px;background:var(--gray-100);border-radius:6px;padding:4px;border:1px solid var(--gray-200)"></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="saveSettings()">Save Settings</button>
+      <button class="btn danger" onclick="deleteActiveCompany()">Delete This Company</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ══════ EMPLOYEE MODAL ══════ -->
+<div id="empModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3 id="empModalTitle">Add Employee</h3>
+    <div class="grid-2">
+      <div class="field"><label>Code *</label><input type="text" id="empCode" placeholder="EMP001"></div>
+      <div class="field"><label>Full Name *</label><input type="text" id="empName" placeholder="John Doe"></div>
+      <div class="field"><label>Designation</label><input type="text" id="empDesignation" placeholder="Manager"></div>
+      <div class="field"><label>Department</label><input type="text" id="empDepartment" placeholder="Operations"></div>
+      <div class="field"><label>Joining Date *</label><input type="date" id="empJoin"></div>
+      <div class="field"><label>Monthly Salary *</label><input type="number" id="empSalary" placeholder="50000" min="0"></div>
+      <div class="field"><label>Phone</label><input type="text" id="empPhone"></div>
+      <div class="field"><label>Bank A/c</label><input type="text" id="empBank"></div>
+      <div class="field"><label>PAN</label><input type="text" id="empPan"></div>
+      <div class="field"><label>Allowances (monthly)</label><input type="number" id="empAllowance" value="0" min="0"></div>
+      <div class="field"><label>Deductions (monthly)</label><input type="number" id="empDeduction" value="0" min="0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeEmpModal()">Cancel</button>
+      <button class="btn" onclick="saveEmp()">Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ LEAVE MODAL ══════ -->
+<div id="leaveModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h3 id="leaveModalTitle">New Leave Request</h3>
+    <div class="grid-2">
+      <div class="field"><label>Employee *</label><select id="leaveEmp"></select></div>
+      <div class="field"><label>Leave Type *</label>
+        <select id="leaveType">
+          <option value="PL">Paid Leave (PL)</option>
+          <option value="ML">Medical Leave (ML)</option>
+          <option value="A">Unpaid / Absent (A)</option>
+          <option value="H">Half Day (H)</option>
+        </select>
+      </div>
+      <div class="field"><label>From Date *</label><input type="date" id="leaveFrom"></div>
+      <div class="field"><label>To Date *</label><input type="date" id="leaveTo"></div>
+      <div class="field" style="grid-column:1/-1"><label>Reason</label><textarea id="leaveReason" rows="2" placeholder="Brief reason&#x2026;"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeLeaveModal()">Cancel</button>
+      <button class="btn" onclick="saveLeave()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ ADD COMPANY MODAL ══════ -->
+<div id="addCoModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:440px">
+    <h3 id="addCoTitle">Add New Company</h3>
+    <div class="field" style="margin-bottom:12px"><label>Company Name *</label><input type="text" id="newCoName" placeholder="e.g. Acme Enterprises Pvt Ltd"></div>
+    <div class="grid-2">
+      <div class="field"><label>Currency</label><input type="text" id="newCoCurrency" placeholder="&#8377;" maxlength="4" value="&#8377;"></div>
+      <div class="field"><label>Working Days</label>
+        <select id="newCoWorkDays">
+          <option value="auto">Auto</option>
+          <option value="26">26 days</option>
+          <option value="30">30 days</option>
+          <option value="calendar">Calendar</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeAddCompanyModal()">Cancel</button>
+      <button class="btn success" onclick="createCompany()">Create Company</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STORAGE KEY & STATE
+//  Each company is self-contained: settings + employees +
+//  attendance + overtime + holidays + leaves
+// ═══════════════════════════════════════════════════════════
+const SK = 'hrms_multi_v1';
+
+let state = {
+  activeId: null,
+  companies: []
+  // Each company: { id, name, address, contact, currency,
+  //   workingDays, logo, otRate,
+  //   employees[], attendance{}, overtime{}, holidays[], leaves[] }
+};
+
+// ── persistence ──
+function load() {
+  try {
+    const raw = localStorage.getItem(SK);
+    if (raw) state = JSON.parse(raw);
+    if (!state.companies) state.companies = [];
+    // migrate old single-company data
+    const old = localStorage.getItem('hrms_data_v2') || localStorage.getItem('hrms_data_v1');
+    if (old && !state.companies.length) {
+      try {
+        const od = JSON.parse(old);
+        if (od.employees && od.employees.length) {
+          const migrated = blankCompany(od.company?.name || 'Imported Company');
+          Object.assign(migrated, {
+            address: od.company?.address || '',
+            contact: od.company?.contact || '',
+            currency: od.company?.currency || '₹',
+            workingDays: od.company?.workingDays || 'auto',
+            logo: od.company?.logo || '',
+            otRate: od.company?.otRate || 0,
+            employees: od.employees || [],
+            attendance: od.attendance || {},
+            overtime: od.overtime || {},
+            holidays: od.holidays || [],
+            leaves: od.leaves || [],
+          });
+          state.companies.push(migrated);
+          state.activeId = migrated.id;
+          save();
+        }
+      } catch(e){}
+    }
+    if (!state.activeId && state.companies.length) state.activeId = state.companies[0].id;
+  } catch(e){ console.error(e); }
+}
+function save() { localStorage.setItem(SK, JSON.stringify(state)); }
+
+function blankCompany(name) {
+  return {
+    id: 'co_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    name: name || 'New Company',
+    address: '', contact: '', currency: '₹',
+    workingDays: 'auto', logo: '', otRate: 0,
+    employees: [], attendance: {}, overtime: {},
+    holidays: [], leaves: []
+  };
+}
+
+// ── active company helpers ──
+function co() { return state.companies.find(c => c.id === state.activeId) || null; }
+function requireCo(action) {
+  if (!co()) {
+    alert('Please select or create a company first.');
+    switchTab('companies'); return false;
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COMPANY DROPDOWN
+// ═══════════════════════════════════════════════════════════
+let dropdownOpen = false;
+function toggleCompanyDropdown() {
+  dropdownOpen = !dropdownOpen;
+  document.getElementById('companyDropdown').classList.toggle('hidden', !dropdownOpen);
+  if (dropdownOpen) {
+    document.getElementById('coSearchInput').value = '';
+    renderCompanyDropdown();
+    document.getElementById('coSearchInput').focus();
+  }
+}
+function closeCompanyDropdown() {
+  dropdownOpen = false;
+  document.getElementById('companyDropdown').classList.add('hidden');
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('companySwitcher').contains(e.target)) closeCompanyDropdown();
+});
+
+function renderCompanyDropdown() {
+  const q = (document.getElementById('coSearchInput')?.value || '').toLowerCase();
+  const filtered = state.companies.filter(c => !q || c.name.toLowerCase().includes(q));
+  const list = document.getElementById('coListItems');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty" style="padding:20px">No companies found</div>'; return;
+  }
+  list.innerHTML = filtered.map(c => {
+    const empCount = c.employees.length;
+    const initial = c.name.charAt(0).toUpperCase();
+    const logoHtml = c.logo
+      ? '<img src="' + c.logo + '" alt=""/>'
+      : '<span style="font-size:15px;font-weight:800;color:var(--blue-700)">' + esc(initial) + '</span>';
+    return '<div class="co-item' + (c.id === state.activeId ? ' active' : '') + '" onclick="selectCompany(\'' + c.id + '\')">'
+      + '<div class="co-logo">' + logoHtml + '</div>'
+      + '<div><div class="co-name">' + esc(c.name) + '</div>'
+      + '<div class="co-emp">' + empCount + ' employee' + (empCount !== 1 ? 's' : '') + ' &bull; ' + esc(c.currency) + '</div></div>'
+      + (c.id === state.activeId ? '<span class="co-tick">&#10003;</span>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function selectCompany(id) {
+  state.activeId = id;
+  save();
+  closeCompanyDropdown();
+  updateHeaderCompany();
+  renderCompaniesTab();
+  switchTab('dashboard');
+}
+
+function updateHeaderCompany() {
+  const c = co();
+  document.getElementById('hdrCompanyName').textContent = c ? c.name : 'Select a company';
+  document.getElementById('coCountBadge').textContent = state.companies.length + ' compan' + (state.companies.length === 1 ? 'y' : 'ies');
+  if (c && c.logo) document.getElementById('hdrLogoImg').src = c.logo;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ADD / DELETE COMPANY
+// ═══════════════════════════════════════════════════════════
+function openAddCompanyModal() {
+  document.getElementById('newCoName').value = '';
+  document.getElementById('newCoCurrency').value = '₹';
+  document.getElementById('newCoWorkDays').value = 'auto';
+  document.getElementById('addCoModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('newCoName').focus(), 80);
+}
+function closeAddCompanyModal() { document.getElementById('addCoModal').classList.add('hidden'); }
+function createCompany() {
+  const name = document.getElementById('newCoName').value.trim();
+  if (!name) { alert('Enter a company name.'); return; }
+  const c = blankCompany(name);
+  c.currency = document.getElementById('newCoCurrency').value.trim() || '₹';
+  c.workingDays = document.getElementById('newCoWorkDays').value;
+  state.companies.push(c);
+  state.activeId = c.id;
+  save();
+  closeAddCompanyModal();
+  updateHeaderCompany();
+  renderCompaniesTab();
+  switchTab('settings');
+  alert('Company "' + name + '" created! Configure its settings now.');
+}
+function deleteActiveCompany() {
+  const c = co(); if (!c) return;
+  if (!confirm('Delete "' + c.name + '" and ALL its data? This cannot be undone.')) return;
+  if (!confirm('Are you absolutely sure?')) return;
+  state.companies = state.companies.filter(x => x.id !== c.id);
+  state.activeId = state.companies.length ? state.companies[0].id : null;
+  save();
+  updateHeaderCompany();
+  renderCompaniesTab();
+  switchTab('companies');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COMPANIES TAB
+// ═══════════════════════════════════════════════════════════
+function renderCompaniesTab() {
+  const q = (document.getElementById('coFilterInput')?.value || '').toLowerCase();
+  const filtered = state.companies.filter(c => !q || c.name.toLowerCase().includes(q));
+  document.getElementById('totalCoCount').textContent = state.companies.length + ' compan' + (state.companies.length === 1 ? 'y' : 'ies');
+  const grid = document.getElementById('companiesGrid');
+  if (!state.companies.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:48px">No companies yet. Click "+ Add Company" to get started.</div>';
+    return;
+  }
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">No companies match your search.</div>';
+    return;
+  }
+  const today = todayStr();
+  grid.innerHTML = filtered.map(c => {
+    const initial = c.name.charAt(0).toUpperCase();
+    const logoHtml = c.logo
+      ? '<img src="' + c.logo + '" alt=""/>'
+      : initial;
+    let present = 0;
+    c.employees.forEach(e => {
+      const s = (c.attendance[e.code] || {})[today];
+      if (s === 'P' || s === 'H' || s === 'PL' || s === 'ML') present++;
+    });
+    const isActive = c.id === state.activeId;
+    return '<div class="company-card' + (isActive ? ' active-co' : '') + '" onclick="selectCompany(\'' + c.id + '\')">'
+      + (isActive ? '<span class="cc-badge">Active</span>' : '')
+      + '<div class="cc-logo">' + logoHtml + '</div>'
+      + '<div class="cc-name">' + esc(c.name) + '</div>'
+      + '<div class="cc-meta">' + esc(c.currency) + ' &bull; ' + esc(c.address || 'No address set') + '</div>'
+      + '<div class="cc-stats">'
+      + '<div class="cc-stat"><b>' + c.employees.length + '</b>Employees</div>'
+      + '<div class="cc-stat"><b>' + present + '</b>Present Today</div>'
+      + '<div class="cc-stat"><b>' + c.holidays.length + '</b>Holidays</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('nav button[data-tab]').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  if (name === 'companies') { renderCompaniesTab(); return; }
+  if (!requireCo()) return;
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'employees') renderEmployees();
+  if (name === 'daily')     renderDaily();
+  if (name === 'monthly')   initMonthly();
+  if (name === 'bulk')      renderBulkList();
+  if (name === 'leaves')    renderLeaves();
+  if (name === 'holidays')  initHolidays();
+  if (name === 'salary')    initSalary();
+  if (name === 'settings')  loadSettingsForm();
+  updatePendingBadge();
+}
+
+function updatePendingBadge() {
+  const c = co(); if (!c) return;
+  const n = c.leaves.filter(l => l.status === 'pending').length;
+  const el = document.getElementById('pendingBadge');
+  if (n > 0) { el.textContent = n; el.classList.remove('hidden'); }
+  else el.classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard() {
+  const c = co(); if (!c) return;
+  const today = todayStr();
+  let p=0, a=0, lv=0, payroll=0;
+  c.employees.forEach(e => {
+    const s = (c.attendance[e.code] || {})[today];
+    if (s === 'P') p++;
+    else if (s === 'H' || s === 'PL' || s === 'ML') lv++;
+    else if (s === 'A') a++;
+    payroll += Number(e.salary||0) + Number(e.allowance||0) - Number(e.deduction||0);
+  });
+  document.getElementById('statEmp').textContent     = c.employees.length;
+  document.getElementById('statPresent').textContent = p;
+  document.getElementById('statAbsent').textContent  = a;
+  document.getElementById('statLeave').textContent   = lv;
+  document.getElementById('statPayroll').textContent = c.currency + ' ' + payroll.toLocaleString('en-IN');
+  const wrap = document.getElementById('dashAttendance');
+  if (!c.employees.length) {
+    wrap.innerHTML = '<div class="empty">No employees yet. Go to Employees tab to add some.</div>'; return;
+  }
+  let h = '<div class="table-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>Designation</th><th>Today</th><th>Overtime</th></tr></thead><tbody>';
+  c.employees.forEach(e => {
+    const s  = (c.attendance[e.code]||{})[today] || '—';
+    const ot = (c.overtime[e.code]||{})[today]   || 0;
+    h += '<tr><td><b>' + esc(e.code) + '</b></td><td>' + esc(e.name) + '</td><td>' + esc(e.designation||'—') + '</td><td>' + badge(s) + '</td><td>' + (ot > 0 ? '<span class="badge OT">' + ot + 'h</span>' : '—') + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  wrap.innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EMPLOYEES
+// ═══════════════════════════════════════════════════════════
+let editingEmpCode = null;
+function openEmpModal(code) {
+  if (!requireCo()) return;
+  editingEmpCode = code || null;
+  document.getElementById('empModalTitle').textContent = code ? 'Edit Employee' : 'Add Employee';
+  const F = id => document.getElementById(id);
+  ['empCode','empName','empDesignation','empDepartment','empJoin','empSalary','empPhone','empBank','empPan'].forEach(f => F(f).value = '');
+  F('empAllowance').value = 0; F('empDeduction').value = 0;
+  if (code) {
+    const e = co().employees.find(x => x.code === code);
+    if (e) {
+      F('empCode').value        = e.code;
+      F('empName').value        = e.name;
+      F('empDesignation').value = e.designation || '';
+      F('empDepartment').value  = e.department || '';
+      F('empJoin').value        = e.joinDate || '';
+      F('empSalary').value      = e.salary || '';
+      F('empPhone').value       = e.phone || '';
+      F('empBank').value        = e.bank || '';
+      F('empPan').value         = e.pan || '';
+      F('empAllowance').value   = e.allowance || 0;
+      F('empDeduction').value   = e.deduction || 0;
+    }
+  }
+  F('empModal').classList.remove('hidden');
+}
+function closeEmpModal() { document.getElementById('empModal').classList.add('hidden'); }
+function saveEmp() {
+  const c = co(); if (!c) return;
+  const F = id => document.getElementById(id).value.trim();
+  const code = F('empCode'), name = F('empName'), join = F('empJoin'), salary = F('empSalary');
+  if (!code || !name || !join || !salary) { alert('Fill Code, Name, Joining Date and Salary.'); return; }
+  const data = {
+    code, name,
+    designation: F('empDesignation'), department: F('empDepartment'),
+    joinDate: join, salary: Number(salary),
+    phone: F('empPhone'), bank: F('empBank'), pan: F('empPan'),
+    allowance: Number(document.getElementById('empAllowance').value) || 0,
+    deduction: Number(document.getElementById('empDeduction').value) || 0,
+  };
+  if (editingEmpCode && editingEmpCode !== code) {
+    if (c.employees.find(e => e.code === code)) { alert('Code already exists.'); return; }
+    c.attendance[code] = c.attendance[editingEmpCode] || {};
+    c.overtime[code]   = c.overtime[editingEmpCode] || {};
+    delete c.attendance[editingEmpCode]; delete c.overtime[editingEmpCode];
+    const idx = c.employees.findIndex(e => e.code === editingEmpCode);
+    if (idx !== -1) c.employees[idx] = data;
+  } else if (editingEmpCode) {
+    const idx = c.employees.findIndex(e => e.code === editingEmpCode);
+    if (idx !== -1) c.employees[idx] = data;
+  } else {
+    if (c.employees.find(e => e.code === code)) { alert('Code already exists.'); return; }
+    c.employees.push(data);
+  }
+  save(); closeEmpModal(); renderEmployees(); renderCompaniesTab();
+}
+function deleteEmp(code) {
+  const c = co(); if (!c) return;
+  if (!confirm('Delete employee and all their records?')) return;
+  c.employees = c.employees.filter(e => e.code !== code);
+  delete c.attendance[code]; delete c.overtime[code];
+  c.leaves = c.leaves.filter(l => l.empCode !== code);
+  save(); renderEmployees(); renderCompaniesTab();
+}
+function renderEmployees() {
+  const c = co(); if (!c) return;
+  const q = (document.getElementById('empSearch')?.value || '').toLowerCase();
+  document.getElementById('empCount').textContent = c.employees.length + ' total';
+  const wrap = document.getElementById('empTableWrap');
+  if (!c.employees.length) { wrap.innerHTML = '<div class="empty">No employees yet.</div>'; return; }
+  const filtered = c.employees.filter(e => !q || e.name.toLowerCase().includes(q) || e.code.toLowerCase().includes(q));
+  let h = '<table><thead><tr><th>Code</th><th>Name</th><th>Designation</th><th>Dept</th><th>Joined</th><th class="text-right">Salary</th><th></th></tr></thead><tbody>';
+  filtered.forEach(e => {
+    h += '<tr><td><b>' + esc(e.code) + '</b></td><td>' + esc(e.name) + '</td><td>' + esc(e.designation||'—') + '</td><td>' + esc(e.department||'—') + '</td><td>' + fmtDate(e.joinDate) + '</td><td class="text-right">' + c.currency + ' ' + Number(e.salary).toLocaleString('en-IN') + '</td><td class="text-right" style="white-space:nowrap"><button class="btn small secondary" onclick="openEmpModal(\'' + esc(e.code) + '\')">Edit</button> <button class="btn small danger" onclick="deleteEmp(\'' + esc(e.code) + '\')">Del</button></td></tr>';
+  });
+  h += '</tbody></table>';
+  wrap.innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DAILY ATTENDANCE
+// ═══════════════════════════════════════════════════════════
+function renderDaily() {
+  const c = co(); if (!c) return;
+  const date = document.getElementById('dailyDate').value || todayStr();
+  document.getElementById('dailyDate').value = date;
+  const hol = c.holidays.find(h => h.date === date);
+  const banner = document.getElementById('dailyHolidayBanner');
+  if (hol) { banner.textContent = 'Holiday: ' + hol.name; banner.classList.remove('hidden'); }
+  else banner.classList.add('hidden');
+  const wrap = document.getElementById('dailyTableWrap');
+  if (!c.employees.length) { wrap.innerHTML = '<div class="empty">No employees in this company yet.</div>'; return; }
+  let h = '<table><thead><tr><th>Code</th><th>Name</th><th>Designation</th><th>Status</th><th>Overtime hrs</th></tr></thead><tbody>';
+  c.employees.forEach(e => {
+    if (date < e.joinDate) {
+      h += '<tr><td>' + esc(e.code) + '</td><td>' + esc(e.name) + '</td><td>' + esc(e.designation||'') + '</td><td><span class="text-muted">Not joined</span></td><td>—</td></tr>';
+      return;
+    }
+    const cur = (c.attendance[e.code]||{})[date] || '';
+    const ot  = (c.overtime[e.code]||{})[date] || '';
+    const btns = ['P','A','H','PL','ML'].map(s =>
+      '<button class="' + (cur===s?'active '+s:'') + '" onclick="setAttend(\'' + esc(e.code) + '\',\'' + date + '\',\'' + s + '\')">' + s + '</button>'
+    ).join('');
+    h += '<tr><td><b>' + esc(e.code) + '</b></td><td>' + esc(e.name) + '</td><td>' + esc(e.designation||'') + '</td><td><div class="status-buttons">' + btns + '</div></td><td><input class="ot-input" type="number" min="0" max="24" step="0.5" value="' + ot + '" placeholder="0" onchange="setOT(\'' + esc(e.code) + '\',\'' + date + '\',this.value)"></td></tr>';
+  });
+  h += '</tbody></table>';
+  wrap.innerHTML = h;
+}
+function setAttend(code, date, status) {
+  const c = co(); if (!c) return;
+  if (!c.attendance[code]) c.attendance[code] = {};
+  if (c.attendance[code][date] === status) delete c.attendance[code][date];
+  else c.attendance[code][date] = status;
+  save(); renderDaily();
+}
+function setOT(code, date, val) {
+  const c = co(); if (!c) return;
+  if (!c.overtime[code]) c.overtime[code] = {};
+  const v = parseFloat(val) || 0;
+  if (v <= 0) delete c.overtime[code][date];
+  else c.overtime[code][date] = v;
+  save();
+}
+function markAllToday(status) {
+  const c = co(); if (!c) return;
+  const date = document.getElementById('dailyDate').value || todayStr();
+  c.employees.forEach(e => {
+    if (date >= e.joinDate) {
+      if (!c.attendance[e.code]) c.attendance[e.code] = {};
+      c.attendance[e.code][date] = status;
+    }
+  });
+  save(); renderDaily();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MONTHLY VIEW
+// ═══════════════════════════════════════════════════════════
+function initMonthly() {
+  const c = co(); if (!c) return;
+  const sel = document.getElementById('monthlyEmp');
+  sel.innerHTML = c.employees.map(e => '<option value="' + esc(e.code) + '">' + esc(e.code) + ' — ' + esc(e.name) + '</option>').join('');
+  if (!document.getElementById('monthlyMonth').value)
+    document.getElementById('monthlyMonth').value = todayStr().substring(0,7);
+  renderMonthly();
+}
+function renderMonthly() {
+  const c = co(); if (!c) return;
+  const wrap = document.getElementById('monthlyView');
+  const code = document.getElementById('monthlyEmp').value;
+  const month = document.getElementById('monthlyMonth').value;
+  if (!code || !month) { wrap.innerHTML = '<div class="empty">Select employee and month.</div>'; return; }
+  const emp = c.employees.find(e => e.code === code);
+  const [y,m] = month.split('-').map(Number);
+  const daysIn = new Date(y,m,0).getDate();
+  const startDay = new Date(y,m-1,1).getDay();
+  const att = c.attendance[code] || {};
+  const holSet = new Set(c.holidays.map(h => h.date));
+  let counts = {P:0,A:0,H:0,PL:0,ML:0,W:0,HOL:0};
+  for (let d=1; d<=daysIn; d++) {
+    const ds = dateStr(y,m,d);
+    if (ds < emp.joinDate) continue;
+    const wd = new Date(y,m-1,d).getDay();
+    const s = att[ds];
+    if (s) counts[s] = (counts[s]||0)+1;
+    else if (holSet.has(ds)) counts.HOL++;
+    else if (wd === 0) counts.W++;
+  }
+  let h = '<div class="grid-4"><div class="stat"><div class="v">' + counts.P + '</div><div class="l">Present</div></div><div class="stat"><div class="v">' + counts.A + '</div><div class="l">Absent</div></div><div class="stat"><div class="v">' + counts.H + '</div><div class="l">Half Days</div></div><div class="stat"><div class="v">' + ((counts.PL||0)+(counts.ML||0)) + '</div><div class="l">Leaves (PL+ML)</div></div></div>';
+  h += '<div class="calendar">';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => { h += '<div class="day-head">' + d + '</div>'; });
+  for (let i=0; i<startDay; i++) h += '<div class="day empty"></div>';
+  for (let d=1; d<=daysIn; d++) {
+    const ds = dateStr(y,m,d);
+    const wd = new Date(y,m-1,d).getDay();
+    const s = att[ds];
+    const isHol = holSet.has(ds);
+    const holName = isHol ? (c.holidays.find(h=>h.date===ds)?.name||'') : '';
+    const bj = ds < emp.joinDate;
+    const cls = s ? s : (isHol ? 'holiday' : (wd===0 ? 'weekend' : ''));
+    const lbl = s || (isHol ? 'HOL' : (wd===0 ? 'WO' : ''));
+    h += '<div class="day ' + cls + '" onclick="' + (bj?'':'cycleStatus(\''+code+'\',\''+ds+'\')') + '" title="' + esc(holName) + '"><span class="n">' + d + '</span><span class="s">' + (bj?'—':lbl) + '</span></div>';
+  }
+  h += '</div><div class="legend"><span><div class="box" style="background:#10b981"></div>Present</span><span><div class="box" style="background:#ef4444"></div>Absent</span><span><div class="box" style="background:#f59e0b"></div>Half Day</span><span><div class="box" style="background:#3b82f6"></div>PL</span><span><div class="box" style="background:#8b5cf6"></div>ML</span><span><div class="box" style="background:#fb923c"></div>Holiday</span><span style="color:var(--gray-500);font-size:11px;margin-left:auto">Click to cycle: P→A→H→PL→ML→clear</span></div>';
+  wrap.innerHTML = h;
+}
+function cycleStatus(code, ds) {
+  const c = co(); if (!c) return;
+  const order = ['P','A','H','PL','ML',''];
+  if (!c.attendance[code]) c.attendance[code] = {};
+  const cur = c.attendance[code][ds] || '';
+  const next = order[(order.indexOf(cur)+1) % order.length];
+  if (next === '') delete c.attendance[code][ds]; else c.attendance[code][ds] = next;
+  save(); renderMonthly();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MONTHLY REPORT PDF
+// ═══════════════════════════════════════════════════════════
+function downloadMonthlyReport() {
+  const c = co(); if (!c) return;
+  const month = document.getElementById('monthlyMonth').value;
+  if (!month) { alert('Select a month first.'); return; }
+  const [y,m] = month.split('-').map(Number);
+  const daysIn = new Date(y,m,0).getDate();
+  const holSet = new Set(c.holidays.map(h => h.date));
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(30,58,138);
+  doc.text(c.name, 40, 40);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(80);
+  doc.text('Monthly Attendance Report — ' + monthName(m) + ' ' + y, 40, 56);
+  const head = [['Code','Name','Desig.','Days','P','A','H','PL','ML','HOL','WO','Payable']];
+  const body = c.employees.map(e => {
+    const att = c.attendance[e.code] || {};
+    let P=0,A=0,H=0,PL=0,ML=0,WO=0,HOL=0;
+    for (let d=1; d<=daysIn; d++) {
+      const ds = dateStr(y,m,d);
+      if (ds < e.joinDate) continue;
+      const wd = new Date(y,m-1,d).getDay();
+      const s = att[ds];
+      if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
+      else if (s==='PL') PL++; else if (s==='ML') ML++;
+      else if (holSet.has(ds)) HOL++;
+      else if (wd===0) WO++;
+    }
+    return [e.code, e.name, e.designation||'—', daysIn, P, A, H, PL, ML, HOL, WO, P+H*0.5+PL+ML];
+  });
+  doc.autoTable({startY:68, head, body, theme:'striped',
+    headStyles:{fillColor:[30,58,138],textColor:255,fontSize:8},
+    styles:{fontSize:9}, columnStyles:{1:{cellWidth:95},2:{cellWidth:80}}});
+  doc.setFontSize(8); doc.setTextColor(150);
+  doc.text('Generated: ' + new Date().toLocaleString(), 40, doc.lastAutoTable.finalY + 18);
+  doc.save('AttReport_' + c.name.replace(/\s+/g,'_') + '_' + y + '-' + String(m).padStart(2,'0') + '.pdf');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BULK ATTENDANCE
+// ═══════════════════════════════════════════════════════════
+function renderBulkList() {
+  const c = co(); if (!c) return;
+  const wrap = document.getElementById('bulkEmpList');
+  if (!c.employees.length) { wrap.innerHTML = '<div class="empty">No employees.</div>'; return; }
+  wrap.innerHTML = c.employees.map(e =>
+    '<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;border-bottom:1px solid var(--gray-100)">'
+    + '<input type="checkbox" class="bulkEmp" value="' + esc(e.code) + '"><span><b>' + esc(e.code) + '</b> — ' + esc(e.name) + ' <span class="text-muted">' + esc(e.designation||'') + '</span></span></label>'
+  ).join('');
+}
+function bulkSelectAll(val) { document.querySelectorAll('.bulkEmp').forEach(cb => cb.checked = val); }
+function applyBulk() {
+  const c = co(); if (!c) return;
+  const from = document.getElementById('bulkFrom').value;
+  const to   = document.getElementById('bulkTo').value;
+  const status = document.getElementById('bulkStatus').value;
+  const skipSun = document.getElementById('bulkSkipSun').value === '1';
+  const skipHol = document.getElementById('bulkSkipHol').value === '1';
+  if (!from || !to) { alert('Choose date range.'); return; }
+  if (from > to) { alert('From must be before To.'); return; }
+  const codes = Array.from(document.querySelectorAll('.bulkEmp:checked')).map(cb => cb.value);
+  if (!codes.length) { alert('Select at least one employee.'); return; }
+  const holSet = new Set(c.holidays.map(h => h.date));
+  let count = 0;
+  codes.forEach(code => {
+    const emp = c.employees.find(e => e.code === code);
+    if (!c.attendance[code]) c.attendance[code] = {};
+    let d = new Date(from); const end = new Date(to);
+    while (d <= end) {
+      const ds = d.toISOString().substring(0,10);
+      if ((!skipSun || d.getDay()!==0) && (!skipHol || !holSet.has(ds)) && ds >= emp.joinDate) {
+        c.attendance[code][ds] = status; count++;
+      }
+      d.setDate(d.getDate()+1);
+    }
+  });
+  save(); alert('Applied "' + status + '" to ' + count + ' day-employee combinations.');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LEAVE REQUESTS
+// ═══════════════════════════════════════════════════════════
+let editingLeaveId = null;
+function openLeaveModal(id) {
+  const c = co(); if (!c) return;
+  editingLeaveId = id || null;
+  document.getElementById('leaveModalTitle').textContent = id ? 'Edit Leave Request' : 'New Leave Request';
+  const sel = document.getElementById('leaveEmp');
+  sel.innerHTML = c.employees.map(e => '<option value="' + esc(e.code) + '">' + esc(e.code) + ' — ' + esc(e.name) + '</option>').join('');
+  ['leaveFrom','leaveTo','leaveReason'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('leaveType').value = 'PL';
+  if (id) {
+    const l = c.leaves.find(x => x.id === id);
+    if (l) {
+      sel.value = l.empCode;
+      document.getElementById('leaveType').value  = l.type;
+      document.getElementById('leaveFrom').value  = l.from;
+      document.getElementById('leaveTo').value    = l.to;
+      document.getElementById('leaveReason').value= l.reason || '';
+    }
+  }
+  document.getElementById('leaveModal').classList.remove('hidden');
+}
+function closeLeaveModal() { document.getElementById('leaveModal').classList.add('hidden'); }
+function saveLeave() {
+  const c = co(); if (!c) return;
+  const empCode = document.getElementById('leaveEmp').value;
+  const type    = document.getElementById('leaveType').value;
+  const from    = document.getElementById('leaveFrom').value;
+  const to      = document.getElementById('leaveTo').value;
+  const reason  = document.getElementById('leaveReason').value.trim();
+  if (!empCode || !from || !to) { alert('Fill employee, from and to date.'); return; }
+  if (from > to) { alert('From must be before To.'); return; }
+  if (editingLeaveId) {
+    const idx = c.leaves.findIndex(l => l.id === editingLeaveId);
+    if (idx !== -1) Object.assign(c.leaves[idx], {empCode,type,from,to,reason});
+  } else {
+    c.leaves.push({id:'LV'+Date.now(), empCode,type,from,to,reason, status:'pending', submittedAt:new Date().toISOString()});
+  }
+  save(); closeLeaveModal(); renderLeaves(); updatePendingBadge();
+}
+function approveLeave(id) {
+  const c = co(); if (!c) return;
+  const l = c.leaves.find(x => x.id === id); if (!l) return;
+  l.status = 'approved';
+  const emp = c.employees.find(e => e.code === l.empCode);
+  if (emp) {
+    if (!c.attendance[l.empCode]) c.attendance[l.empCode] = {};
+    let d = new Date(l.from); const end = new Date(l.to);
+    while (d <= end) {
+      const ds = d.toISOString().substring(0,10);
+      if (ds >= emp.joinDate) c.attendance[l.empCode][ds] = l.type;
+      d.setDate(d.getDate()+1);
+    }
+  }
+  save(); renderLeaves(); updatePendingBadge();
+  alert('Leave approved and attendance updated.');
+}
+function rejectLeave(id) {
+  const c = co(); if (!c) return;
+  const l = c.leaves.find(x => x.id === id); if (!l) return;
+  l.status = 'rejected'; save(); renderLeaves(); updatePendingBadge();
+}
+function deleteLeave(id) {
+  const c = co(); if (!c) return;
+  if (!confirm('Delete this leave request?')) return;
+  c.leaves = c.leaves.filter(l => l.id !== id);
+  save(); renderLeaves(); updatePendingBadge();
+}
+function renderLeaves() {
+  const c = co(); if (!c) return;
+  const wrap = document.getElementById('leaveTableWrap');
+  if (!c.leaves.length) { wrap.innerHTML = '<div class="empty">No leave requests yet.</div>'; return; }
+  const sorted = [...c.leaves].sort((a,b) => b.submittedAt.localeCompare(a.submittedAt));
+  let h = '<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+  sorted.forEach(l => {
+    const emp = c.employees.find(e => e.code === l.empCode);
+    h += '<tr><td><b>' + esc(l.empCode) + '</b><br><span class="text-muted">' + (emp?esc(emp.name):l.empCode) + '</span></td>'
+      + '<td><span class="badge ' + l.type + '">' + l.type + '</span></td>'
+      + '<td>' + fmtDate(l.from) + '</td><td>' + fmtDate(l.to) + '</td>'
+      + '<td>' + esc(l.reason||'—') + '</td>'
+      + '<td><span class="leave-' + l.status + '">' + l.status.charAt(0).toUpperCase() + l.status.slice(1) + '</span></td>'
+      + '<td style="white-space:nowrap">'
+      + (l.status==='pending' ? '<button class="btn small success" onclick="approveLeave(\'' + l.id + '\')">Approve</button> <button class="btn small danger" onclick="rejectLeave(\'' + l.id + '\')">Reject</button> ' : '')
+      + '<button class="btn small secondary" onclick="openLeaveModal(\'' + l.id + '\')">Edit</button> '
+      + '<button class="btn small danger" onclick="deleteLeave(\'' + l.id + '\')">Del</button></td></tr>';
+  });
+  h += '</tbody></table></div>';
+  wrap.innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HOLIDAYS
+// ═══════════════════════════════════════════════════════════
+function initHolidays() {
+  if (!document.getElementById('holYear').value)
+    document.getElementById('holYear').value = new Date().getFullYear();
+  renderHolidays();
+}
+function addHoliday() {
+  const c = co(); if (!c) return;
+  const date = document.getElementById('holDate').value;
+  const name = document.getElementById('holName').value.trim();
+  if (!date || !name) { alert('Enter date and holiday name.'); return; }
+  if (c.holidays.find(h => h.date === date)) { alert('Holiday already exists for that date.'); return; }
+  c.holidays.push({date,name});
+  c.holidays.sort((a,b) => a.date.localeCompare(b.date));
+  document.getElementById('holDate').value = '';
+  document.getElementById('holName').value = '';
+  save(); renderHolidays();
+}
+function deleteHoliday(date) {
+  const c = co(); if (!c) return;
+  c.holidays = c.holidays.filter(h => h.date !== date);
+  save(); renderHolidays();
+}
+function renderHolidays() {
+  const c = co(); if (!c) return;
+  const year = parseInt(document.getElementById('holYear').value) || new Date().getFullYear();
+  const filtered = c.holidays.filter(h => h.date.startsWith(String(year)));
+  document.getElementById('holCount').textContent = c.holidays.length + ' holidays';
+  const wrap = document.getElementById('holTableWrap');
+  if (!filtered.length) { wrap.innerHTML = '<div class="empty">No holidays set for ' + year + '.</div>'; return; }
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  let h = '<table><thead><tr><th>Date</th><th>Day</th><th>Holiday Name</th><th></th></tr></thead><tbody>';
+  filtered.forEach(hol => {
+    const d = new Date(hol.date);
+    h += '<tr><td>' + fmtDate(hol.date) + '</td><td>' + days[d.getDay()] + '</td><td>' + esc(hol.name) + '</td><td><button class="btn small danger" onclick="deleteHoliday(\'' + hol.date + '\')">Remove</button></td></tr>';
+  });
+  h += '</tbody></table>';
+  wrap.innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SALARY
+// ═══════════════════════════════════════════════════════════
+function initSalary() {
+  const c = co(); if (!c) return;
+  const sel = document.getElementById('slipEmp');
+  sel.innerHTML = '<option value="">— Select employee —</option>' + c.employees.map(e => '<option value="' + esc(e.code) + '">' + esc(e.code) + ' — ' + esc(e.name) + '</option>').join('');
+  if (!document.getElementById('slipMonth').value)
+    document.getElementById('slipMonth').value = todayStr().substring(0,7);
+  document.getElementById('slipPreview').innerHTML = '<div class="empty">Select an employee and month.</div>';
+}
+function computeSlip(code, month) {
+  const c = co(); if (!c) return null;
+  const emp = c.employees.find(e => e.code === code); if (!emp) return null;
+  const [y,m] = month.split('-').map(Number);
+  const daysIn = new Date(y,m,0).getDate();
+  const att = c.attendance[code] || {};
+  const otMap = c.overtime[code] || {};
+  const holSet = new Set(c.holidays.map(h => h.date));
+  let P=0,A=0,H=0,PL=0,ML=0,W=0,HOL=0,beforeJoin=0,totalOT=0;
+  for (let d=1; d<=daysIn; d++) {
+    const ds = dateStr(y,m,d);
+    const wd = new Date(y,m-1,d).getDay();
+    if (ds < emp.joinDate) { beforeJoin++; continue; }
+    if (otMap[ds]) totalOT += otMap[ds];
+    const s = att[ds];
+    if (s==='P') P++; else if (s==='A') A++; else if (s==='H') H++;
+    else if (s==='PL') PL++; else if (s==='ML') ML++;
+    else if (holSet.has(ds)) HOL++;
+    else if (wd===0) W++;
+  }
+  let workingDays = daysIn;
+  if (c.workingDays === 'auto') { workingDays = daysIn-W-HOL-beforeJoin; if (workingDays<1) workingDays=1; }
+  else if (c.workingDays === '26') workingDays = 26;
+  else if (c.workingDays === '30') workingDays = 30;
+  const payableDays = P + H*0.5 + PL + ML;
+  const perDay = Number(emp.salary) / workingDays;
+  const earnedBasic = perDay * payableDays;
+  const allowance = Number(emp.allowance||0) * (payableDays / workingDays);
+  const deduction = Number(emp.deduction||0);
+  const otRate = Number(c.otRate||0);
+  const otAmount = totalOT * otRate;
+  const gross = earnedBasic + allowance + otAmount;
+  const net = gross - deduction;
+  return {emp, c, y,m, daysIn,P,A,H,PL,ML,W,HOL,beforeJoin, workingDays,payableDays,perDay,earnedBasic,allowance,deduction,otRate,totalOT,otAmount,gross,net};
+}
+function previewSlip() {
+  const code  = document.getElementById('slipEmp').value;
+  const month = document.getElementById('slipMonth').value;
+  const wrap  = document.getElementById('slipPreview');
+  if (!code || !month) { wrap.innerHTML = '<div class="empty">Select an employee and month.</div>'; return; }
+  const r = computeSlip(code, month); if (!r) { wrap.innerHTML = '<div class="empty">Employee not found.</div>'; return; }
+  const c = r.c;
+  const cur = c.currency;
+  wrap.innerHTML = '<div style="border:1.5px solid var(--gray-200);border-radius:10px;padding:22px;background:white;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--blue-900);padding-bottom:12px;margin-bottom:14px;">'
+    + '<div><div style="font-size:19px;font-weight:800;color:var(--blue-900)">' + esc(c.name) + '</div>'
+    + '<div class="text-muted">' + esc(c.address||'') + '</div><div class="text-muted">' + esc(c.contact||'') + '</div></div>'
+    + '<div style="text-align:right"><div style="font-size:15px;font-weight:700">Salary Slip</div><div class="text-muted">' + monthName(r.m) + ' ' + r.y + '</div></div></div>'
+    + '<div class="grid-2" style="font-size:13px;gap:7px;">'
+    + '<div><b>Employee:</b> ' + esc(r.emp.name) + ' (' + esc(r.emp.code) + ')</div>'
+    + '<div><b>Designation:</b> ' + esc(r.emp.designation||'—') + '</div>'
+    + '<div><b>Department:</b> ' + esc(r.emp.department||'—') + '</div>'
+    + '<div><b>Joining Date:</b> ' + fmtDate(r.emp.joinDate) + '</div>'
+    + '<div><b>Bank A/c:</b> ' + esc(r.emp.bank||'—') + '</div>'
+    + '<div><b>PAN:</b> ' + esc(r.emp.pan||'—') + '</div></div>'
+    + '<div class="section-title">Attendance</div>'
+    + '<div class="table-wrap"><table><thead><tr><th>Total</th><th>Working</th><th>Present</th><th>Half</th><th>PL</th><th>ML</th><th>Holidays</th><th>Absent</th><th>Payable</th></tr></thead><tbody>'
+    + '<tr><td>' + r.daysIn + '</td><td>' + r.workingDays + '</td><td>' + r.P + '</td><td>' + r.H + '</td><td>' + r.PL + '</td><td>' + r.ML + '</td><td>' + r.HOL + '</td><td>' + r.A + '</td><td><b>' + r.payableDays + '</b></td></tr></tbody></table></div>'
+    + '<div class="section-title">Earnings &amp; Deductions</div>'
+    + '<div class="table-wrap"><table><tbody>'
+    + '<tr><td>Basic (' + r.payableDays + ' days × ' + cur + r.perDay.toFixed(2) + '/day)</td><td class="text-right">' + cur + ' ' + r.earnedBasic.toFixed(2) + '</td></tr>'
+    + '<tr><td>Allowances (pro-rata)</td><td class="text-right">' + cur + ' ' + r.allowance.toFixed(2) + '</td></tr>'
+    + (r.otAmount>0 ? '<tr><td>Overtime (' + r.totalOT + 'h × ' + cur + r.otRate + '/hr)</td><td class="text-right">' + cur + ' ' + r.otAmount.toFixed(2) + '</td></tr>' : '')
+    + '<tr><td><b>Gross</b></td><td class="text-right"><b>' + cur + ' ' + r.gross.toFixed(2) + '</b></td></tr>'
+    + '<tr><td>Deductions</td><td class="text-right">− ' + cur + ' ' + r.deduction.toFixed(2) + '</td></tr>'
+    + '<tr style="background:var(--blue-50)"><td><b>Net Payable</b></td><td class="text-right"><b style="font-size:16px;color:var(--blue-900)">' + cur + ' ' + r.net.toFixed(2) + '</b></td></tr>'
+    + '</tbody></table></div></div>';
+}
+function downloadSlip() {
+  const code  = document.getElementById('slipEmp').value;
+  const month = document.getElementById('slipMonth').value;
+  if (!code || !month) { alert('Select employee and month first.'); return; }
+  const r = computeSlip(code, month); if (!r) { alert('Employee not found.'); return; }
+  const c = r.c;
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const W = doc.internal.pageSize.getWidth();
+  const cur = c.currency;
+  let yPos = 40;
+  if (c.logo) { try { doc.addImage(c.logo,'PNG',40,yPos,48,48); } catch(e){} }
+  const xT = c.logo ? 98 : 40;
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(30,58,138);
+  doc.text(c.name || '', xT, yPos+16);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(80);
+  if (c.address) doc.text(c.address, xT, yPos+30);
+  if (c.contact) doc.text(c.contact, xT, yPos+42);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(0);
+  doc.text('SALARY SLIP', W-40, yPos+16, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text(monthName(r.m) + ' ' + r.y, W-40, yPos+30, {align:'right'});
+  doc.setDrawColor(30,58,138); doc.setLineWidth(1.5);
+  doc.line(40, yPos+58, W-40, yPos+58);
+  doc.autoTable({startY: yPos+74,
+    body:[['Employee Code',r.emp.code,'Joining Date',fmtDate(r.emp.joinDate)],['Employee Name',r.emp.name,'Designation',r.emp.designation||'—'],['Department',r.emp.department||'—','Phone',r.emp.phone||'—'],['Bank A/c',r.emp.bank||'—','PAN',r.emp.pan||'—']],
+    theme:'plain', styles:{fontSize:10,cellPadding:4},
+    columnStyles:{0:{fontStyle:'bold',cellWidth:88},1:{cellWidth:168},2:{fontStyle:'bold',cellWidth:88},3:{cellWidth:168}}});
+  doc.autoTable({startY: doc.lastAutoTable.finalY+12,
+    head:[['Total','Working','Present','Half','PL','ML','Holidays','Absent','Payable']],
+    body:[[r.daysIn,r.workingDays,r.P,r.H,r.PL,r.ML,r.HOL,r.A,r.payableDays]],
+    theme:'striped', headStyles:{fillColor:[30,58,138],textColor:255,fontSize:8}, styles:{fontSize:10,halign:'center'}});
+  const eb = [
+    ['Basic ('+r.payableDays+' days @ '+r.perDay.toFixed(2)+'/day)', r.earnedBasic.toFixed(2)],
+    ['Allowances (pro-rata)', r.allowance.toFixed(2)],
+  ];
+  if (r.otAmount>0) eb.push(['Overtime ('+r.totalOT+'h × '+cur+r.otRate+'/hr)', r.otAmount.toFixed(2)]);
+  eb.push(['Gross Earnings', r.gross.toFixed(2)], ['Less: Deductions', '-'+r.deduction.toFixed(2)]);
+  doc.autoTable({startY: doc.lastAutoTable.finalY+12,
+    head:[['Description','Amount ('+cur+')']],
+    body: eb,
+    foot:[['NET PAYABLE', r.net.toFixed(2)]],
+    theme:'grid',
+    headStyles:{fillColor:[30,58,138],textColor:255},
+    footStyles:{fillColor:[219,234,254],textColor:[30,58,138],fontStyle:'bold',fontSize:12},
+    styles:{fontSize:10}, columnStyles:{1:{halign:'right'}}});
+  doc.setFontSize(9); doc.setTextColor(150);
+  doc.text('Computer-generated — no signature required.', 40, doc.lastAutoTable.finalY+34);
+  doc.save('SalarySlip_'+r.emp.code+'_'+r.y+'-'+String(r.m).padStart(2,'0')+'.pdf');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SETTINGS (active company)
+// ═══════════════════════════════════════════════════════════
+function loadSettingsForm() {
+  const c = co(); if (!c) return;
+  document.getElementById('setCompany').value    = c.name || '';
+  document.getElementById('setAddress').value    = c.address || '';
+  document.getElementById('setContact').value    = c.contact || '';
+  document.getElementById('setCurrency').value   = c.currency || '₹';
+  document.getElementById('setWorkingDays').value= c.workingDays || 'auto';
+  document.getElementById('setOTRate').value     = c.otRate || '';
+  const prev = document.getElementById('logoPreview');
+  if (c.logo) prev.src = c.logo; else prev.removeAttribute('src');
+}
+function uploadLogo(e) {
+  const c = co(); if (!c) return;
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    c.logo = ev.target.result;
+    document.getElementById('logoPreview').src = ev.target.result;
+    updateHeaderCompany();
+  };
+  reader.readAsDataURL(file);
+}
+function saveSettings() {
+  const c = co(); if (!c) return;
+  c.name        = document.getElementById('setCompany').value.trim() || c.name;
+  c.address     = document.getElementById('setAddress').value.trim();
+  c.contact     = document.getElementById('setContact').value.trim();
+  c.currency    = document.getElementById('setCurrency').value.trim() || '₹';
+  c.workingDays = document.getElementById('setWorkingDays').value;
+  c.otRate      = parseFloat(document.getElementById('setOTRate').value) || 0;
+  save(); updateHeaderCompany(); renderCompaniesTab();
+  alert('Settings saved for "' + c.name + '".');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BACKUP / RESTORE (all companies)
+// ═══════════════════════════════════════════════════════════
+function exportAllData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'hrms_backup_all_' + todayStr() + '.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.companies) {
+        // new multi-company format
+        if (!confirm('This will replace all data with ' + data.companies.length + ' companies. Continue?')) return;
+        state = data;
+        save(); load(); updateHeaderCompany(); renderCompaniesTab(); switchTab('companies');
+        alert('Restored ' + state.companies.length + ' companies.');
+      } else if (data.employees) {
+        // old single-company format → import as a new company
+        const name = data.company?.name || 'Imported Company';
+        if (!confirm('Import old backup as new company "' + name + '"?')) return;
+        const c = blankCompany(name);
+        Object.assign(c, {
+          address:data.company?.address||'', contact:data.company?.contact||'',
+          currency:data.company?.currency||'₹', workingDays:data.company?.workingDays||'auto',
+          logo:data.company?.logo||'', otRate:data.company?.otRate||0,
+          employees:data.employees||[], attendance:data.attendance||{},
+          overtime:data.overtime||{}, holidays:data.holidays||[], leaves:data.leaves||[]
+        });
+        state.companies.push(c); state.activeId = c.id;
+        save(); updateHeaderCompany(); renderCompaniesTab(); switchTab('dashboard');
+        alert('Imported "' + name + '".');
+      } else throw new Error('Unrecognised backup format.');
+    } catch(err) { alert('Import failed: ' + err.message); }
+  };
+  reader.readAsText(file); e.target.value = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════
+function todayStr() { return new Date().toISOString().substring(0,10); }
+function dateStr(y,m,d) { return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+function fmtDate(s) { if (!s) return '—'; const [y,mo,d]=s.split('-'); return d+'/'+mo+'/'+y; }
+function monthName(m) { return ['January','February','March','April','May','June','July','August','September','October','November','December'][m-1]; }
+function esc(s) { return String(s||'').replace(/[<>&"']/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+function badge(s) {
+  if (!s || s==='—') return '<span class="text-muted">—</span>';
+  const L={P:'Present',A:'Absent',H:'Half Day',PL:'Paid Leave',ML:'Medical Leave'};
+  return '<span class="badge '+s+'">'+(L[s]||s)+'</span>';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+load();
+updateHeaderCompany();
+document.getElementById('dailyDate').value = todayStr();
+renderCompaniesTab();
+</script>
+</body>
+</html>
