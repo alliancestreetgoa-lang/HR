@@ -284,7 +284,42 @@ tbody tr:hover{background:var(--blue-50)}
 <!-- ══════════════════════════════════════
      HEADER
 ══════════════════════════════════════ -->
+<!-- NAV DRAWER (mobile) -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="nav-drawer">
+  <div id="drawer-hdr">
+    <h3>HR Management</h3>
+    <p>Multi-Company System</p>
+  </div>
+  <div id="drawer-co-wrap">
+    <div class="dco-label">Active Company</div>
+    <button class="drawer-co-btn" onclick="openCompanyDropdownInDrawer()">
+      <span id="drawer-co-name">Select company…</span>
+      <span style="margin-left:auto;opacity:.5">▼</span>
+    </button>
+  </div>
+  <div id="drawer-nav">
+    <button class="d-tab active" data-tab="companies" onclick="switchTab('companies');closeDrawer()"><span class="di">🏢</span>Companies</button>
+    <button class="d-tab" data-tab="dashboard" onclick="switchTab('dashboard');closeDrawer()"><span class="di">📊</span>Dashboard</button>
+    <button class="d-tab" data-tab="employees" onclick="switchTab('employees');closeDrawer()"><span class="di">👥</span>Employees</button>
+    <button class="d-tab" data-tab="daily" onclick="switchTab('daily');closeDrawer()"><span class="di">📅</span>Daily Attendance</button>
+    <button class="d-tab" data-tab="monthly" onclick="switchTab('monthly');closeDrawer()"><span class="di">📆</span>Monthly View</button>
+    <button class="d-tab" data-tab="bulk" onclick="switchTab('bulk');closeDrawer()"><span class="di">📋</span>Bulk Attendance</button>
+    <button class="d-tab" data-tab="leaves" onclick="switchTab('leaves');closeDrawer()"><span class="di">🏖️</span>Leave Requests</button>
+    <button class="d-tab" data-tab="holidays" onclick="switchTab('holidays');closeDrawer()"><span class="di">🎉</span>Holidays</button>
+    <button class="d-tab" data-tab="salary" onclick="switchTab('salary');closeDrawer()"><span class="di">💵</span>Salary Slips</button>
+    <button class="d-tab" data-tab="settings" onclick="switchTab('settings');closeDrawer()"><span class="di">⚙️</span>Settings</button>
+  </div>
+  <div id="drawer-footer">
+    <button class="d-footer-btn" style="background:#1d4ed8;color:#fff" onclick="openAddCompanyModal();closeDrawer()">+ Add Company</button>
+    <button class="d-footer-btn" style="background:#f1f5f9;color:#475569" onclick="exportAllData();closeDrawer()">↓ Backup Data</button>
+  </div>
+</div>
+
 <header>
+  <button id="hamburger" onclick="toggleDrawer()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
   <div class="hdr-brand">
     <div class="hdr-logo">
       <img id="hdrLogoImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z'/></svg>" alt=""/>
@@ -717,6 +752,7 @@ function selectCompany(id) {
   save();
   closeCompanyDropdown();
   updateHeaderCompany();
+  updateDrawerCoName();
   renderCompaniesTab();
   switchTab('dashboard');
 }
@@ -810,7 +846,38 @@ function renderCompaniesTab() {
 // ═══════════════════════════════════════════════════════════
 //  TABS
 // ═══════════════════════════════════════════════════════════
+// ── Hamburger / Drawer ────────────────────────
+function toggleDrawer() {
+  const drawer = document.getElementById('nav-drawer');
+  const overlay = document.getElementById('drawer-overlay');
+  const hbg = document.getElementById('hamburger');
+  const isOpen = drawer.classList.contains('open');
+  drawer.classList.toggle('open', !isOpen);
+  overlay.classList.toggle('open', !isOpen);
+  hbg.classList.toggle('open', !isOpen);
+  document.body.style.overflow = isOpen ? '' : 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('nav-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function openCompanyDropdownInDrawer() {
+  closeDrawer();
+  setTimeout(() => toggleCompanyDropdown(), 150);
+}
+function updateDrawerCoName() {
+  const c = co();
+  const el = document.getElementById('drawer-co-name');
+  if (el) el.textContent = c ? c.name : 'Select company…';
+}
+
 function switchTab(name) {
+  // Sync drawer active state
+  document.querySelectorAll('.d-tab').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-tab') === name));
+  updateDrawerCoName();
   document.querySelectorAll('nav button[data-tab]').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
